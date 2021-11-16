@@ -8,6 +8,8 @@
 #include "Commands.h"
 
 using namespace std;
+const std::string WHITESPACE = " \n\r\t\f\v";
+extern SmallShell &smash;
 
 #if 0
 #define FUNC_ENTRY()  \
@@ -19,6 +21,10 @@ using namespace std;
 #define FUNC_ENTRY()
 #define FUNC_EXIT()
 #endif
+
+///
+/// helper functions
+///
 
 string _ltrim(const std::string& s)
 {
@@ -75,6 +81,89 @@ void _removeBackgroundSign(char* cmd_line) {
   cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
 }
 
+///new functions
+
+static vector<string> splitStringToWords(const string &str) {
+    vector<string> wordsvec;
+    string word = "";
+    for(unsigned int i=0;i<str.length();i++){
+        if (str.at(i) == ' ' && word != "") {
+            wordsvec.push_back(word);
+            word = "";
+        }
+        else {
+            word += str.at(i) ;
+        }
+    }
+    if (word != "") {
+        wordsvec.push_back(word);
+    }
+    return wordsvec;
+}
+
+bool checkIfInt(const string &str) {
+    if (str.empty() || ( (!isdigit(str[0]))&&(str[0] != '-') && (str[0] != '+'))) return false;
+    for(unsigned int i=1;i<str.length();i++){
+        if(isdigit(str[i])==0){
+            return false;
+        }
+    }
+    return true;
+}
+
+///
+/// #Command
+/// \param cmd_line
+
+Command::Command(const char *cmd_line) {
+    int len = strlen(cmd_line);
+    char *command_to_insert = new char[len + 1];
+    strcpy(command_to_insert, cmd_line);
+    this->commandLine = command_to_insert;
+    vector<string> split_params_to_words = splitStringToWords(this->commandLine);
+    for (unsigned int i = 1; i < split_params_to_words.size(); i++) {
+        this->params.push_back(split_params_to_words[i]);
+    }
+}
+
+Command::~Command() {
+    delete this->commandLine;
+}
+
+///
+/// #BuiltInCommand
+/// \param cmd_line
+
+BuiltInCommand::BuiltInCommand(const char *cmd_line) : Command(cmd_line) {}
+
+///
+/// #ChpromptCommand
+/// \param cmd_line
+
+ChpromptCommand::ChpromptCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+void ChpromptCommand::execute() {
+    if (this->params.empty()) {
+        smash.setPrompt("smash> ");
+    }
+    else {
+        string newPromptName = this->params.at(0);
+        newPromptName.append("> ");
+        smash.setPrompt(newPromptName);
+    }
+}
+
+
+
+
+
+
+
+
+
+///
+/// #smash
+///
+
 // TODO: Add your implementation for classes in Commands.h 
 
 SmallShell::SmallShell() {
@@ -85,34 +174,54 @@ SmallShell::~SmallShell() {
 // TODO: add your implementation
 }
 
-/**
-* Creates and returns a pointer to Command class which matches the given command line (cmd_line)
-*/
 Command * SmallShell::CreateCommand(const char* cmd_line) {
-	// For example:
-/*
-  string cmd_s = _trim(string(cmd_line));
-  string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));
+    string command_line = string(cmd_line);
 
-  if (firstWord.compare("pwd") == 0) {
-    return new GetCurrDirCommand(cmd_line);
-  }
-  else if (firstWord.compare("showpid") == 0) {
-    return new ShowPidCommand(cmd_line);
-  }
-  else if ...
-  .....
-  else {
-    return new ExternalCommand(cmd_line);
-  }
-  */
-  return nullptr;
+//    bool background = _isBackgroundComamnd(cmd_line);
+//
+//    bool ans_to_pipe1 = is_out(command_line);
+//    bool ans_to_pipe_err1 = is_err(command_line);
+//
+//    bool ans_to_override1 = is_ovveride(command_line);
+//    bool ans_to_append1 = is_append(command_line);
+//
+//    if (ans_to_pipe1 || ans_to_pipe_err1) {
+//        bool isout = true;
+//        if(ans_to_pipe_err1){
+//            isout= false;
+//        }
+//        return new PipeCommand(cmd_line,isout);
+//    }
+//    else if (ans_to_append1 || ans_to_override1) {
+//        bool override = true;
+//        if (ans_to_append1) {
+//            override = false;
+//        }
+//        return new RedirectionCommand(cmd_line,background,override);
+//    }
+//    else
+        if (command_line.find("chprompt") == 0) {
+        return new ChpromptCommand(cmd_line);
+    }
+    return nullptr;
 }
 
 void SmallShell::executeCommand(const char *cmd_line) {
-  // TODO: Add your implementation here
-  // for example:
-  // Command* cmd = CreateCommand(cmd_line);
-  // cmd->execute();
-  // Please note that you must fork smash process for some commands (e.g., external commands....)
+    Command *command = CreateCommand(cmd_line);
+    if (command) {
+//        if (command->isExternal()) {
+//            command->execute();
+//        } else {
+            command->execute();
+            delete command;
+//        }
+    }
+}
+
+string SmallShell::getPrompt() {
+    return this->prompt;
+}
+
+void SmallShell::setPrompt(string newPromptName) {
+    this->prompt = newPromptName;
 }

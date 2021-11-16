@@ -27,5 +27,5 @@ zip: $(SRCS) $(HDRS)
 	zip $(SUBMITTERS).zip $^ submitters.txt Makefile
 
 clean:
-	rm -rf $(SMASH_BIN) $(OBJS) $(TESTS_OUTPUTS) 
+	rm -rf $(SMASH_BIN) $(OBJS) $(TESTS_OUTPUTS)
 	rm -rf $(SUBMITTERS).zip
