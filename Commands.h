@@ -163,6 +163,7 @@ class SmallShell {
   // TODO: Add your data members
 
   string prompt = "smash> ";
+  int pid;
 
   SmallShell();
  public:
@@ -181,6 +182,7 @@ class SmallShell {
 
     string getPrompt();
     void setPrompt(string prompt);
+    int getPid();
 };
 
-#endif //SMASH_COMMAND_H_
+#endif //SMASH_

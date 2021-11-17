@@ -152,7 +152,15 @@ void ChpromptCommand::execute() {
     }
 }
 
+///
+/// #ShowPidCommand
+/// \param cmd_line
 
+ShowPidCommand::ShowPidCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+void ShowPidCommand::execute() {
+    string res="smash pid is ";
+    cout << res<<smash.getPid()<< endl;
+}
 
 
 
@@ -164,7 +172,7 @@ void ChpromptCommand::execute() {
 /// #smash
 ///
 
-// TODO: Add your implementation for classes in Commands.h 
+// TODO: Add your implementation for classes in Commands.h
 
 SmallShell::SmallShell() {
 // TODO: add your implementation
@@ -201,8 +209,11 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 //    }
 //    else
         if (command_line.find("chprompt") == 0) {
-        return new ChpromptCommand(cmd_line);
-    }
+            return new ChpromptCommand(cmd_line);
+        }
+        else if (command_line.find("showpid") == 0) {
+            return new ShowPidCommand(cmd_line);
+        }
     return nullptr;
 }
 
@@ -224,4 +235,8 @@ string SmallShell::getPrompt() {
 
 void SmallShell::setPrompt(string newPromptName) {
     this->prompt = newPromptName;
+}
+
+int SmallShell::getPid() {
+    return this->pid;
 }
