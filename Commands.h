@@ -56,6 +56,14 @@ class RedirectionCommand : public Command {
   //void cleanup() override;
 };
 
+
+
+///
+/// general commands
+///
+
+
+
 class ChpromptCommand : public BuiltInCommand {
 public:
     explicit ChpromptCommand(const char *cmd_line);
@@ -65,7 +73,8 @@ public:
 
 class ChangeDirCommand : public BuiltInCommand {
 // TODO: Add your data members public:
-  ChangeDirCommand(const char* cmd_line, char** plastPwd);
+public:
+  ChangeDirCommand(const char* cmd_line);
   virtual ~ChangeDirCommand() {}
   void execute() override;
 };
@@ -164,6 +173,8 @@ class SmallShell {
 
   string prompt = "smash> ";
   int pid;
+  string last_dir = "";
+  string curr_dir = "";
 
   SmallShell();
  public:
@@ -183,6 +194,10 @@ class SmallShell {
     string getPrompt();
     void setPrompt(string prompt);
     int getPid();
+    const string &getCurrDir() const;
+    void setCurrDir(string currDir);
+    const string &getLastDir() const;
+    void setLastDir(string lastDir);
 };
 
 #endif //SMASH_

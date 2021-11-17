@@ -111,8 +111,23 @@ bool checkIfInt(const string &str) {
     return true;
 }
 
+
+
 ///
-/// #Command
+/// commands implementation
+///
+
+
+
+
+
+
+
+
+
+
+///
+/// #Command (abstract command)
 /// \param cmd_line
 
 Command::Command(const char *cmd_line) {
@@ -160,6 +175,67 @@ ShowPidCommand::ShowPidCommand(const char *cmd_line) : BuiltInCommand(cmd_line) 
 void ShowPidCommand::execute() {
     string res="smash pid is ";
     cout << res<<smash.getPid()<< endl;
+}
+
+///
+/// #ChangeDirCommand
+/// \param cmd_line
+
+ChangeDirCommand::ChangeDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+void ChangeDirCommand::execute() {
+    string last_dir = smash.getLastDir();
+    string curr_dir = "";
+    string msg="";
+    if (this->params.size() > 1) {
+        cerr<<"smash error: cd: too many arguments"<<endl;
+        return;
+    }
+    else if(this->params.size()==0){ //Todo: ask about zero arguments
+        cerr << "smash error: cd: zero arguments" << endl;
+    }
+    else if (this->params[0] == "-") {
+        if (last_dir == "") {
+            cerr<<"smash error: cd: OLDPWD not set"<<endl;
+            return;
+        }
+        last_dir = smash.getCurrDir();
+        curr_dir = smash.getLastDir();
+
+        int result = chdir(curr_dir.c_str());//curr_dir.c_str()
+        if (result == -1) {
+            perror("smash error: chdir failed");
+            return;
+        }
+
+        smash.setCurrDir(curr_dir);
+        smash.setLastDir(last_dir);
+        return;
+    }
+    else if (this->params.empty()) {
+        return;
+    }
+    else {
+//        char *currDirCommand = get_current_dir_name();
+//        if (currDirCommand == nullptr) {
+//            perror("ERROR : get_current_dir_name failed");
+//            return ;
+//        }
+//
+//        last_dir = currDirCommand;
+//        free(currDirCommand);
+
+        ///todo: check about (last_dir == curr_dir)
+        int ans = chdir(this->params[0].c_str());
+        if (ans == -1) {
+            perror("smash error: chdir failed");
+            return;
+        }
+        last_dir = curr_dir;
+        curr_dir = this->params[0];
+        smash.setCurrDir(curr_dir);
+        smash.setLastDir(last_dir);
+        return;
+    }
 }
 
 
@@ -214,10 +290,14 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         else if (command_line.find("showpid") == 0) {
             return new ShowPidCommand(cmd_line);
         }
+//        else if (command_line.find("pwd") == 0) {
+//            return new GetCurrDirCommand(cmd_line);
+//        }
+        else if (command_line.find("cd") == 0) {
+            return new ChangeDirCommand(cmd_line);
+        }
     return nullptr;
 }
-
-///omri
 
 void SmallShell::executeCommand(const char *cmd_line) {
     Command *command = CreateCommand(cmd_line);
@@ -241,4 +321,17 @@ void SmallShell::setPrompt(string newPromptName) {
 
 int SmallShell::getPid() {
     return this->pid;
+}
+
+const string &SmallShell::getCurrDir() const {
+    return this->curr_dir;
+}
+void SmallShell::setCurrDir(string currDir) {
+    this->curr_dir = currDir;
+}
+const string &SmallShell::getLastDir() const {
+    return this->last_dir;
+}
+void SmallShell::setLastDir(string lastDir) {
+    this->last_dir = lastDir;
 }
