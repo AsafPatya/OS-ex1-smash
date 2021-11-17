@@ -217,6 +217,8 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     return nullptr;
 }
 
+///omri
+
 void SmallShell::executeCommand(const char *cmd_line) {
     Command *command = CreateCommand(cmd_line);
     if (command) {
