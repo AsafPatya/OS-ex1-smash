@@ -119,14 +119,6 @@ bool checkIfInt(const string &str) {
 ///
 
 
-
-
-
-
-
-
-
-
 ///
 /// #Command (abstract command)
 /// \param cmd_line
@@ -203,6 +195,7 @@ void GetCurrDirCommand::execute() {
 /// #ChangeDirCommand
 /// \param cmd_line
 
+
 ChangeDirCommand::ChangeDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
 void ChangeDirCommand::execute() {
     string last_dir = smash.getLastDir();
@@ -259,15 +252,76 @@ void ChangeDirCommand::execute() {
     }
 }
 
+///
+/// #jobs section starts
+///
+
+///
+/// #JobsCommand
+/// \param cmd_line
+/// \param jobs
+
+JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
+void JobsCommand::execute() {
+    jobs_list->removeFinishedJobs();
+    jobs_list->printJobsList();
+}
+
+///
+/// jobs list
+///
+
+void JobsList::printJobsList() {
+//    for (auto &job : this->map_of_smash_jobs) {
+//        time_t now = time(nullptr);
+//        if (now == -1) {
+//            perror("smash error: time failed");
+//            return;
+//        }
+//        cout << "[" << job.second.getJobId() << "] " << job.second.getCommand() << " : "
+//             << job.second.getPid() << " "
+//             << difftime(now, job.second.get_time_of_command()) << " secs";
+//        if (job.second.if_is_stopped()) {
+//            cout << " (stopped)";
+//        }
+//        cout << endl;
+//    }
+}
+
+void JobsList::removeFinishedJobs() {
+//    int status;
+//    int childPid = waitpid(-1, &status, WNOHANG);
+//    while (childPid > 0) {
+//
+//        int jobId = get_job_id_by_pid(childPid);
+//        if (jobId != 0) {
+//            removeJobById(jobId);
+//        }
+//
+//        childPid = waitpid(-1, &status, WNOHANG);
+//    }
+}
 
 
+///
+/// #jobs section ends
+///
+
+
+
+
+
+
+///
+/// smash section
+///
 
 
 ///
 /// smash helper functions
 ///
 
-bool xxx(string command, string s){
+bool xxx(string command, string s){ //todo: change the name
     //todo: remove spaces from the start of the command
     if (s.length() < command.length())
         return false;
