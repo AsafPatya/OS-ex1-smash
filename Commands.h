@@ -94,15 +94,6 @@ public:
 };
 
 class JobsList;
-class QuitCommand : public BuiltInCommand {
-// TODO: Add your data members public:
-  QuitCommand(const char* cmd_line, JobsList* jobs);
-  virtual ~QuitCommand() {}
-  void execute() override;
-};
-
-
-
 
 class JobsList {
  public:
@@ -110,9 +101,10 @@ class JobsList {
    // TODO: Add your data members
   };
  // TODO: Add your data members
- public:
-  JobsList();
-  ~JobsList();
+// std::map<int, JobEntry> map_of_smash_jobs;
+public:
+    JobsList()=default;
+    ~JobsList(){};
   void addJob(Command* cmd, bool isStopped = false);
   void printJobsList();
   void killAllJobs();
@@ -126,6 +118,9 @@ class JobsList {
 
 class JobsCommand : public BuiltInCommand {
  // TODO: Add your data members
+
+private:
+    JobsList *jobs_list;
  public:
   JobsCommand(const char* cmd_line, JobsList* jobs);
   virtual ~JobsCommand() {}
@@ -156,6 +151,13 @@ class BackgroundCommand : public BuiltInCommand {
   void execute() override;
 };
 
+class QuitCommand : public BuiltInCommand {
+// TODO: Add your data members public:
+    QuitCommand(const char* cmd_line, JobsList* jobs);
+    virtual ~QuitCommand() {}
+    void execute() override;
+};
+
 class HeadCommand : public BuiltInCommand {
  public:
   HeadCommand(const char* cmd_line);
@@ -175,6 +177,7 @@ class SmallShell {
   int pid;
   string last_dir = "";
   string curr_dir = "";
+  JobsList jobs;
 
   SmallShell();
  public:
