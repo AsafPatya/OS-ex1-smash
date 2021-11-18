@@ -56,6 +56,14 @@ class RedirectionCommand : public Command {
   //void cleanup() override;
 };
 
+
+
+///
+/// general commands
+///
+
+
+
 class ChpromptCommand : public BuiltInCommand {
 public:
     explicit ChpromptCommand(const char *cmd_line);
@@ -63,24 +71,25 @@ public:
     void execute() override;
 };
 
-class ChangeDirCommand : public BuiltInCommand {
-// TODO: Add your data members public:
-  ChangeDirCommand(const char* cmd_line, char** plastPwd);
-  virtual ~ChangeDirCommand() {}
-  void execute() override;
+class ShowPidCommand : public BuiltInCommand {
+public:
+    ShowPidCommand(const char* cmd_line);
+    virtual ~ShowPidCommand() {}
+    void execute() override;
 };
 
 class GetCurrDirCommand : public BuiltInCommand {
- public:
-  GetCurrDirCommand(const char* cmd_line);
-  virtual ~GetCurrDirCommand() {}
-  void execute() override;
+public:
+    GetCurrDirCommand(const char* cmd_line);
+    virtual ~GetCurrDirCommand() {}
+    void execute() override;
 };
 
-class ShowPidCommand : public BuiltInCommand {
- public:
-  ShowPidCommand(const char* cmd_line);
-  virtual ~ShowPidCommand() {}
+class ChangeDirCommand : public BuiltInCommand {
+// TODO: Add your data members public:
+public:
+  ChangeDirCommand(const char* cmd_line);
+  virtual ~ChangeDirCommand() {}
   void execute() override;
 };
 
@@ -164,6 +173,8 @@ class SmallShell {
 
   string prompt = "smash> ";
   int pid;
+  string last_dir = "";
+  string curr_dir = "";
 
   SmallShell();
  public:
@@ -183,6 +194,10 @@ class SmallShell {
     string getPrompt();
     void setPrompt(string prompt);
     int getPid();
+    const string &getCurrDir() const;
+    void setCurrDir(string currDir);
+    const string &getLastDir() const;
+    void setLastDir(string lastDir);
 };
 
 #endif //SMASH_
