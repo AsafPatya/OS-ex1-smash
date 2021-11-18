@@ -113,7 +113,7 @@ public:
   void removeJobById(int jobId);
   JobEntry * getLastJob(int* lastJobId);
   JobEntry *getLastStoppedJob(int *jobId);
-  // TODO: Add extra methods or modify exisitng ones as needed
+  // TODO: Add extra methods or modify existing ones as needed
 };
 
 class JobsCommand : public BuiltInCommand {
