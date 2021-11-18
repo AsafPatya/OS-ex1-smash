@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <iomanip>
 #include "Commands.h"
+#include <unistd.h>
 
 using namespace std;
 const std::string WHITESPACE = " \n\r\t\f\v";
@@ -178,6 +179,27 @@ void ShowPidCommand::execute() {
 }
 
 ///
+/// #GetCurrDirCommand
+/// \param cmd_line
+
+GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+void GetCurrDirCommand::execute() {
+    char *currDirCommand = get_current_dir_name();
+    if (currDirCommand == nullptr) {
+        perror("error : get_current_dir_name failed");
+        return;
+    }
+    string result = currDirCommand;
+    free(currDirCommand);
+    if (result == "") {
+        return;
+    }
+    else {
+        cout << result << endl;
+    }
+}
+
+///
 /// #ChangeDirCommand
 /// \param cmd_line
 
@@ -185,7 +207,7 @@ ChangeDirCommand::ChangeDirCommand(const char *cmd_line) : BuiltInCommand(cmd_li
 void ChangeDirCommand::execute() {
     string last_dir = smash.getLastDir();
     string curr_dir = "";
-    string msg="";
+
     if (this->params.size() > 1) {
         cerr<<"smash error: cd: too many arguments"<<endl;
         return;
@@ -215,14 +237,14 @@ void ChangeDirCommand::execute() {
         return;
     }
     else {
-//        char *currDirCommand = get_current_dir_name();
-//        if (currDirCommand == nullptr) {
-//            perror("ERROR : get_current_dir_name failed");
-//            return ;
-//        }
-//
-//        last_dir = currDirCommand;
-//        free(currDirCommand);
+        char *currDirCommand = get_current_dir_name();
+        if (currDirCommand == nullptr) {
+            perror("ERROR : get_current_dir_name failed");
+            return ;
+        }
+
+        last_dir = currDirCommand;
+        free(currDirCommand);
 
         ///todo: check about (last_dir == curr_dir)
         int ans = chdir(this->params[0].c_str());
@@ -230,7 +252,6 @@ void ChangeDirCommand::execute() {
             perror("smash error: chdir failed");
             return;
         }
-        last_dir = curr_dir;
         curr_dir = this->params[0];
         smash.setCurrDir(curr_dir);
         smash.setLastDir(last_dir);
@@ -242,7 +263,29 @@ void ChangeDirCommand::execute() {
 
 
 
+///
+/// smash helper functions
+///
 
+bool xxx(string command, string s){
+    //todo: remove spaces from the start of the command
+    if (s.length() < command.length())
+        return false;
+    for (unsigned int i = 0; i < command.length(); ++i) {
+        if (command.at(i) != s.at(i))
+            return false;
+    }
+    //todo: make sure the command ends with space
+    return true;
+}
+
+bool isStringCommand(string s, string command){
+//    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
+    bool b = xxx(command, s);
+//    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
+    return b;
+    //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
+}
 
 ///
 /// #smash
@@ -259,6 +302,7 @@ SmallShell::~SmallShell() {
 }
 
 Command * SmallShell::CreateCommand(const char* cmd_line) {
+//    cout << "\n\ncreating command...\n\n"<< endl;
     string command_line = string(cmd_line);
 
 //    bool background = _isBackgroundComamnd(cmd_line);
@@ -284,16 +328,16 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 //        return new RedirectionCommand(cmd_line,background,override);
 //    }
 //    else
-        if (command_line.find("chprompt") == 0) {
+        if (isStringCommand(command_line, "chprompt")) {
             return new ChpromptCommand(cmd_line);
         }
-        else if (command_line.find("showpid") == 0) {
+        else if (isStringCommand(command_line, "showpid")) {
             return new ShowPidCommand(cmd_line);
         }
-//        else if (command_line.find("pwd") == 0) {
-//            return new GetCurrDirCommand(cmd_line);
-//        }
-        else if (command_line.find("cd") == 0) {
+        else if (isStringCommand(command_line, "pwd")) {
+            return new GetCurrDirCommand(cmd_line);
+        }
+        else if (isStringCommand(command_line, "cd")) {
             return new ChangeDirCommand(cmd_line);
         }
     return nullptr;
@@ -326,12 +370,15 @@ int SmallShell::getPid() {
 const string &SmallShell::getCurrDir() const {
     return this->curr_dir;
 }
+
 void SmallShell::setCurrDir(string currDir) {
     this->curr_dir = currDir;
 }
+
 const string &SmallShell::getLastDir() const {
     return this->last_dir;
 }
+
 void SmallShell::setLastDir(string lastDir) {
     this->last_dir = lastDir;
 }
