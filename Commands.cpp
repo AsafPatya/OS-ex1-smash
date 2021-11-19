@@ -112,7 +112,33 @@ bool checkIfInt(const string &str) {
     return true;
 }
 
+///
+/// smash helper functions
+///
 
+bool xxx(string command, string s){ //todo: change the name
+    //todo: remove spaces from the start of the command
+    if (s.length() < command.length())
+        return false;
+    for (unsigned int i = 0; i < command.length(); ++i) {
+        if (command.at(i) != s.at(i))
+            return false;
+    }
+    //todo: make sure the command ends with space
+    return true;
+}
+
+bool isStringCommand(string s, string command){
+//    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
+    bool b = xxx(command, s);
+//    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
+    return b;
+    //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
+}
+
+void smashError(string errMsg){
+    cerr << "smash error: " << errMsg << endl;
+}
 
 ///
 /// commands implementation
@@ -140,6 +166,10 @@ Command::~Command() {
 
 void Command::setStopped(bool stopped) {
     this->stopped = stopped;
+}
+
+const char *Command::getCommandLine() const {
+    return this->commandLine;
 }
 
 ///
@@ -527,33 +557,7 @@ void ForegroundCommand::execute() {
 ///
 
 
-///
-/// smash helper functions
-///
 
-bool xxx(string command, string s){ //todo: change the name
-    //todo: remove spaces from the start of the command
-    if (s.length() < command.length())
-        return false;
-    for (unsigned int i = 0; i < command.length(); ++i) {
-        if (command.at(i) != s.at(i))
-            return false;
-    }
-    //todo: make sure the command ends with space
-    return true;
-}
-
-bool isStringCommand(string s, string command){
-//    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
-    bool b = xxx(command, s);
-//    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
-    return b;
-    //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
-}
-
-void smashError(string errMsg){
-    cerr << "smash error: " << errMsg << endl;
-}
 
 ///
 /// #smash
