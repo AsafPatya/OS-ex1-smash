@@ -163,11 +163,21 @@ Command::Command(const char *cmd_line) {
 Command::~Command() {
     delete this->commandLine;
 }
-
+bool Command::if_is_stopped() const {
+    return this->stopped;
+}
 void Command::setStopped(bool stopped) {
     this->stopped = stopped;
 }
-
+bool Command::isExternal() const {
+    return this->external;
+}
+bool Command::if_is_background() const {
+    return this->background;
+}
+void Command::setBackground(bool background) {
+    this->background = background;
+}
 const char *Command::getCommandLine() const {
     return this->commandLine;
 }
@@ -290,15 +300,11 @@ void ChangeDirCommand::execute() {
 /// #JobsCommand
 /// \param cmd_line
 /// \param jobs
-/// #jobs section starts
-///
 
-///
-/// jobs entry
-///
-
-const char *JobsList::JobEntry::getCommand() const {
-    return this->command->getCommandLine();
+JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
+void JobsCommand::execute() {
+    jobs_list->removeFinishedJobs();
+    jobs_list->printJobsList();
 }
 
 ///
@@ -360,7 +366,139 @@ void KillCommand::execute() {
     cout << "signal number " << abs_sig_num << " was sent to pid " << pid_of_job << endl;
 }
 
+///
+/// #ForegroundCommand
+/// \param cmd_line
+/// \param jobs
 
+ForegroundCommand::ForegroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
+
+void ForegroundCommand::execute() {
+
+    int job_id;
+    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+
+    if (this->params.size() > 1) {
+        smashError("fg: invalid arguments");
+        return;
+    }
+
+    if (this->params.empty()) {
+        if (map.size() == 0) {
+            smashError("fg: jobs list is empty");
+            return;
+        }
+        //TODO: do we need to remove finished jobs before
+        job_id = this->jobs_list->return_max_job_id_in_Map();
+    }
+    else {
+        if (!checkIfInt(this->params[0])) {
+            smashError("fg: invalid arguments");
+            return;
+        }
+        job_id = stoi(this->params[0]);
+        this->jobs_list->removeFinishedJobs();
+
+        if (map.find(job_id) == map.end()) {
+            smashError("fg: job-id " + this->params[0] + " does not exist");
+            return;
+        }
+    }
+
+    JobsList::JobEntry currentJob = map.find(job_id)->second;
+    int pid_of_job = currentJob.getPid();
+    string command_line = currentJob.getCommand();
+
+    cout << command_line << " : " << pid_of_job << endl;
+//    currentJob.setBackground(false);
+//    smash.set_fg_process(pid_of_job);
+
+//    if (killpg(pid_of_job, SIGCONT) == -1) {
+//        perror("smash error: kill failed");
+//        return;
+//    }
+//    map.find(job_id)->second.setStopped(false);
+//    waitpid(pid_of_job, nullptr, WUNTRACED);
+//
+//    if (!map.find(job_id)->second.if_is_stopped()) {
+//        this->jobs_list->removeJobById(job_id);
+//    }
+//
+//    this->jobs_list->change_last_stopped_job_id();
+//    smash.set_fg_process(0);
+}
+
+///
+/// #BackgroundCommand
+/// \param cmd_line
+/// \param jobs
+BackgroundCommand::BackgroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
+void BackgroundCommand::execute() {
+    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+    int job_id = 0;
+
+    if (this->params.size() > 1) {
+        smashError("bg: invalid arguments");
+        return;
+    }
+
+    if(this->params.size() == 0){
+        job_id = this->jobs_list->get_max_from_stopped_jobs_id();
+
+        if (job_id == 0) {
+            smashError("bg: there is no stopped jobs to resume");
+            return;
+        }
+    }
+    else{
+        if (!checkIfInt(this->params[0])) {
+            smashError("bg: invalid arguments");
+            return;
+        }
+        else {
+            job_id = stoi(this->params[0]);
+        }
+        if (map.find(job_id) == map.end()) {
+            smashError("bg: job-id " + this->params[0] + " does not exist");
+            return;
+        }
+
+        JobsList::JobEntry jobEntry = map.find(job_id)->second;
+
+        if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
+            smashError("bg: job-id " + this->params[0] + " is already running in the background");
+            return;
+        }
+        else if (jobEntry.if_is_background() && jobEntry.if_is_stopped()) {
+            int pid_of_job = jobEntry.getPid();
+            string command_line = jobEntry.getCommand();
+
+            cout << command_line << " : " << pid_of_job << endl;
+
+            if (killpg(pid_of_job, SIGCONT) == -1) {
+                // syscall failed
+                smashError(" kill failed");
+                return;
+            }
+
+            map.at(job_id).setStopped(false);
+//            this->jobs_list->change_last_stopped_job_id(); todo
+            return;
+        }
+        else{
+            int pid_of_job = jobEntry.getPid();
+            string command_line = jobEntry.getCommand();
+            cout << command_line << " : " << pid_of_job << endl;
+
+            if (kill(pid_of_job, SIGCONT) == -1) {
+                smashError(" kill failed");
+                return;
+            }
+            map.at(job_id).setStopped(false);
+//            this->jobs_list->change_last_stopped_job_id(); todo
+        }
+    }
+}
 
 ///
 /// #jobs section starts
@@ -429,7 +567,6 @@ void JobsList::set_max_from_jobs_id(int max_job_id) {
     this->max_from_jobs_id = max_job_id;
 }
 
-
 const map<int, JobsList::JobEntry> &JobsList::get_map() const {
     return this->map_of_smash_jobs;
 }
@@ -453,100 +590,35 @@ JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
     }
 }
 
-
 pid_t JobsList::JobEntry::getPid() const {
     return this->pid;
 }
-
+const char *JobsList::JobEntry::getCommand() const {
+    return this->command->getCommandLine();
+}
 void JobsList::JobEntry::deleteCommand() {
     delete this->command;
 }
-
+bool JobsList::JobEntry::if_is_background() const {
+    return this->command->if_is_background();
+}
+void JobsList::JobEntry::setBackground(bool mode) const {
+    this->command->setBackground(mode);
+}
 void JobsList::JobEntry::setStopped(bool stopped) const {
     this->command->setStopped(stopped);
+}
+bool JobsList::JobEntry::if_is_stopped()const {
+    return this->command->if_is_stopped();
 }
 
 ///
 /// #job entry end
 ///
-///
-/// #JobsCommand
-/// \param cmd_line
-/// \param jobs
-
-JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
-void JobsCommand::execute() {
-    jobs_list->removeFinishedJobs();
-    jobs_list->printJobsList();
-}
 
 ///
 /// #jobs section ends
 ///
-
-
-///
-/// #ForegroundCommand
-/// \param cmd_line
-/// \param jobs
-
-ForegroundCommand::ForegroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
-
-void ForegroundCommand::execute() {
-
-    int job_id;
-    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
-
-    if (this->params.size() > 1) {
-        smashError("fg: invalid arguments");
-        return;
-    }
-
-    if (this->params.empty()) {
-        if (map.size() == 0) {
-            smashError("fg: jobs list is empty");
-            return;
-        }
-        //TODO: do we need to remove finished jobs before
-        job_id = this->jobs_list->return_max_job_id_in_Map();
-    }
-    else {
-        if (!checkIfInt(this->params[0])) {
-            smashError("fg: invalid arguments");
-            return;
-        }
-        job_id = stoi(this->params[0]);
-        this->jobs_list->removeFinishedJobs();
-
-        if (map.find(job_id) == map.end()) {
-            smashError("fg: job-id " + this->params[0] + " does not exist");
-            return;
-        }
-    }
-
-    JobsList::JobEntry currentJob = map.find(job_id)->second;
-    int pid_of_job = currentJob.getPid();
-    string command_line = currentJob.getCommand();
-
-    cout << command_line << " : " << pid_of_job << endl;
-//    currentJob.setBackground(false);
-//    smash.set_fg_process(pid_of_job);
-
-//    if (killpg(pid_of_job, SIGCONT) == -1) {
-//        perror("smash error: kill failed");
-//        return;
-//    }
-//    map.find(job_id)->second.setStopped(false);
-//    waitpid(pid_of_job, nullptr, WUNTRACED);
-//
-//    if (!map.find(job_id)->second.if_is_stopped()) {
-//        this->jobs_list->removeJobById(job_id);
-//    }
-//
-//    this->jobs_list->change_last_stopped_job_id();
-//    smash.set_fg_process(0);
-}
-
 
 
 
