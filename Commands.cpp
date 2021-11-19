@@ -523,7 +523,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         }
 
         else if (isStringCommand(command_line, "kill")) {
-            return new KillCommand(cmd_line);
+            return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
         }
 
 
@@ -572,4 +572,8 @@ void SmallShell::setLastDir(string lastDir) {
 
 const JobsList &SmallShell::getJobsList() const {
     return this->jobs;
+}
+
+JobsList *SmallShell::get_ptr_to_jobslist() {
+    return &(this->jobs);
 }

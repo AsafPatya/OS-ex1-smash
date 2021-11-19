@@ -162,7 +162,7 @@ public:
    void set_max_from_jobs_id(int max_job_id);
 //   int get_max_from_stopped_jobs_id() const;
 //   void set_max_from_stopped_jobs_id(int max_stopped_job_id);
-//   int return_max_job_id_in_Map();
+   int return_max_job_id_in_Map();
 //   int get_job_id_by_pid(int pid);
 //   void change_last_stopped_job_id();
     const std::map<int, JobEntry> &get_map() const;
@@ -255,6 +255,7 @@ class SmallShell {
     const string &getLastDir() const;
     void setLastDir(string lastDir);
     const JobsList &getJobsList() const;
+    JobsList *get_ptr_to_jobslist();
 };
 
 #endif //SMASH_
