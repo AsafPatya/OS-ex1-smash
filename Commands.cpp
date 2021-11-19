@@ -169,9 +169,9 @@ bool Command::if_is_stopped() const {
 void Command::setStopped(bool stopped) {
     this->stopped = stopped;
 }
-bool Command::isExternal() const {
-    return this->external;
-}
+//bool Command::isExternal() const {
+//    return this->external;
+//}
 bool Command::if_is_background() const {
     return this->background;
 }
@@ -443,7 +443,7 @@ void BackgroundCommand::execute() {
     }
 
     if(this->params.size() == 0){
-        job_id = this->jobs_list->get_max_from_stopped_jobs_id();
+//        job_id = this->jobs_list->get_max_from_stopped_jobs_id();//todo
 
         if (job_id == 0) {
             smashError("bg: there is no stopped jobs to resume");
