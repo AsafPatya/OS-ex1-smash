@@ -127,7 +127,7 @@ class JobsList {
 //      void setJobId(int jobId);
 //      time_t get_time_of_command() const;
 //      void set_time_of_command(time_t time);
-//      const char *getCommand() const;
+     const char *getCommand() const;
       void deleteCommand();
 //      bool if_is_stopped() const;
       void setStopped(bool stopped) const;
@@ -190,6 +190,8 @@ class KillCommand : public BuiltInCommand {
 
 class ForegroundCommand : public BuiltInCommand {
  // TODO: Add your data members
+private:
+    JobsList *jobs_list;
  public:
   ForegroundCommand(const char* cmd_line, JobsList* jobs);
   virtual ~ForegroundCommand() {}
