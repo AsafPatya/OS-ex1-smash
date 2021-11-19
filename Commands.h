@@ -19,8 +19,8 @@ protected:
     vector<string> params;
 //    bool external = false;
     bool stopped = false;
-//    bool background = false;
-//    bool foreground= false;
+    bool background = false;
+    bool foreground= false;
 
  public:
   Command(const char* cmd_line);
@@ -29,10 +29,10 @@ protected:
   //virtual void prepare();
   //virtual void cleanup();
   // TODO: Add your extra methods if needed
-//  bool if_is_stopped() const;
+  bool if_is_stopped() const;
     void setStopped(bool stopped);
-//    bool if_is_background() const;
-//    void setBackground(bool background);
+    bool if_is_background() const;
+    void setBackground(bool background);
 //    bool isExternal() const;
     const char *getCommandLine() const;
 //    const vector<string> &getParams() const;
@@ -129,10 +129,10 @@ class JobsList {
 //      void set_time_of_command(time_t time);
      const char *getCommand() const;
       void deleteCommand();
-//      bool if_is_stopped() const;
+      bool if_is_stopped() const;
       void setStopped(bool stopped) const;
-//      bool if_is_background() const;
-//      void setBackground(bool mode) const;
+      bool if_is_background() const;
+      void setBackground(bool mode) const;
       ~JobEntry(){};
 
 
@@ -200,6 +200,8 @@ private:
 
 class BackgroundCommand : public BuiltInCommand {
  // TODO: Add your data members
+private:
+    JobsList *jobs_list;
  public:
   BackgroundCommand(const char* cmd_line, JobsList* jobs);
   virtual ~BackgroundCommand() {}
