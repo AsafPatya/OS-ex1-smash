@@ -123,9 +123,9 @@ class JobsList {
       JobEntry(int jobId, int pid, Command *cmd);
       int getPid() const;
 //      void setPid(int pid);
-//      int getJobId() const;
+      int getJobId() const;
 //      void setJobId(int jobId);
-//      time_t get_time_of_command() const;
+      time_t get_time_of_command() const;
 //      void set_time_of_command(time_t time);
      const char *getCommand() const;
       void deleteCommand();
@@ -163,7 +163,7 @@ public:
 //   int get_max_from_stopped_jobs_id() const;
 //   void set_max_from_stopped_jobs_id(int max_stopped_job_id);
    int return_max_job_id_in_Map();
-//   int get_job_id_by_pid(int pid);
+   int get_job_id_by_pid(int pid);
 //   void change_last_stopped_job_id();
     const std::map<int, JobEntry> &get_map() const;
 };
