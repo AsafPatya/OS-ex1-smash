@@ -257,6 +257,17 @@ void ChangeDirCommand::execute() {
 }
 
 ///
+/// #JobsCommand
+/// \param cmd_line
+/// \param jobs
+
+JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
+void JobsCommand::execute() {
+    jobs_list->removeFinishedJobs();
+    jobs_list->printJobsList();
+}
+
+///
 /// #KillCommand
 ///
 
@@ -315,20 +326,11 @@ void KillCommand::execute() {
     cout << "signal number " << abs_sig_num << " was sent to pid " << pid_of_job << endl;
 }
 
+
+
 ///
 /// #jobs section starts
 ///
-
-///
-/// #JobsCommand
-/// \param cmd_line
-/// \param jobs
-
-JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
-void JobsCommand::execute() {
-    jobs_list->removeFinishedJobs();
-    jobs_list->printJobsList();
-}
 
 ///
 /// #jobs list start
@@ -435,8 +437,16 @@ void JobsList::JobEntry::setStopped(bool stopped) const {
 ///
 
 ///
-/// #jobs section starts
+/// #jobs section ends
 ///
+
+
+
+
+
+
+
+
 
 
 ///
