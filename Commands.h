@@ -6,6 +6,8 @@
 
 #include <vector>
 #include <string>
+#include <time.h>
+#include <map>
 
 using std::vector;
 using std::string;
@@ -15,6 +17,10 @@ class Command {
 protected:
     char *commandLine;
     vector<string> params;
+//    bool external = false;
+    bool stopped = false;
+//    bool background = false;
+//    bool foreground= false;
 
  public:
   Command(const char* cmd_line);
@@ -23,6 +29,14 @@ protected:
   //virtual void prepare();
   //virtual void cleanup();
   // TODO: Add your extra methods if needed
+//  bool if_is_stopped() const;
+    void setStopped(bool stopped);
+//    bool if_is_background() const;
+//    void setBackground(bool background);
+//    bool isExternal() const;
+//    const char *getCommandLine() const;
+//    const vector<string> &getParams() const;
+//    const string &getStartCommand() const;
 };
 
 class BuiltInCommand : public Command {
@@ -99,9 +113,37 @@ class JobsList {
  public:
   class JobEntry {
    // TODO: Add your data members
+  private:
+      int pid;
+      int jobID = 0;
+      time_t time_of_command;
+      Command *command;
+//      bool stopped = false;
+  public:
+      JobEntry(int jobId, int pid, Command *cmd);
+      int getPid() const;
+//      void setPid(int pid);
+//      int getJobId() const;
+//      void setJobId(int jobId);
+//      time_t get_time_of_command() const;
+//      void set_time_of_command(time_t time);
+//      const char *getCommand() const;
+      void deleteCommand();
+//      bool if_is_stopped() const;
+      void setStopped(bool stopped) const;
+//      bool if_is_background() const;
+//      void setBackground(bool mode) const;
+      ~JobEntry(){};
+
+
+
+
   };
  // TODO: Add your data members
-// std::map<int, JobEntry> map_of_smash_jobs;
+private:
+    int max_from_jobs_id = 0;
+    int max_from_stopped_jobs_id = 0;
+    std::map<int, JobEntry> map_of_smash_jobs;
 public:
     JobsList()=default;
     ~JobsList(){};
@@ -114,6 +156,16 @@ public:
   JobEntry * getLastJob(int* lastJobId);
   JobEntry *getLastStoppedJob(int *jobId);
   // TODO: Add extra methods or modify existing ones as needed
+//   int addJob(int pid, int job_id, Command *cmd, bool stopped = false);
+//   int addJob(int pid, Command *cmd, bool stopped = false);
+//   int get_max_from_jobs_id() const;
+   void set_max_from_jobs_id(int max_job_id);
+//   int get_max_from_stopped_jobs_id() const;
+//   void set_max_from_stopped_jobs_id(int max_stopped_job_id);
+   int return_max_job_id_in_Map();
+//   int get_job_id_by_pid(int pid);
+//   void change_last_stopped_job_id();
+    const std::map<int, JobEntry> &get_map() const;
 };
 
 class JobsCommand : public BuiltInCommand {
@@ -130,6 +182,7 @@ private:
 class KillCommand : public BuiltInCommand {
  // TODO: Add your data members
  public:
+    JobsList *jobs_list;
   KillCommand(const char* cmd_line, JobsList* jobs);
   virtual ~KillCommand() {}
   void execute() override;
@@ -201,6 +254,8 @@ class SmallShell {
     void setCurrDir(string currDir);
     const string &getLastDir() const;
     void setLastDir(string lastDir);
+    const JobsList &getJobsList() const;
+    JobsList *get_ptr_to_jobslist();
 };
 
 #endif //SMASH_

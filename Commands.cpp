@@ -138,6 +138,10 @@ Command::~Command() {
     delete this->commandLine;
 }
 
+void Command::setStopped(bool stopped) {
+    this->stopped = stopped;
+}
+
 ///
 /// #BuiltInCommand
 /// \param cmd_line
@@ -253,6 +257,65 @@ void ChangeDirCommand::execute() {
 }
 
 ///
+/// #KillCommand
+///
+
+KillCommand::KillCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line) ,jobs_list(jobs){}
+void KillCommand::execute() {
+    if (this->params.size() != 2) {
+        cerr << "smash error: kill: invalid arguments" << endl;
+        return;
+    }
+
+
+    int sig_num = 0;
+    int job_id = 0;
+    if (!checkIfInt(this->params[0]) || !checkIfInt(this->params[1])) {
+        cerr << "smash error: kill: invalid arguments" << endl;
+        return;
+    }
+    else {
+
+        sig_num = stoi(this->params[0]);
+
+        job_id = stoi(this->params[1]);
+    }
+    if (job_id < 0) {
+
+        cerr << "smash error: kill: job-id " << job_id << " does not exist" << endl;
+        return;
+    }
+    if (sig_num >= 0) {
+        cerr << "smash error: kill: invalid arguments" << endl;
+        return;
+    }
+    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+    if (map.find(job_id) == map.end()) {
+        string msg="smash error: kill: job-id ";
+        msg+=to_string(job_id);
+        msg+=" does not exist";
+        cerr << msg<< endl;
+
+        return;
+    }
+
+    int abs_sig_num = abs(sig_num);
+    int pid_of_job = map.find(job_id)->second.getPid();
+
+    if (kill(pid_of_job, abs_sig_num) == -1) {
+        perror("smash error: kill failed");
+        return;
+    }
+    else if (abs_sig_num == 9) {
+        this->jobs_list->removeJobById(job_id);
+    }
+    else if(abs_sig_num==19){
+        smash.getJobsList().get_map().find(job_id)->second.setStopped(true);
+    }
+    cout << "signal number " << abs_sig_num << " was sent to pid " << pid_of_job << endl;
+}
+
+///
 /// #jobs section starts
 ///
 
@@ -268,7 +331,7 @@ void JobsCommand::execute() {
 }
 
 ///
-/// jobs list
+/// #jobs list start
 ///
 
 void JobsList::printJobsList() {
@@ -302,14 +365,78 @@ void JobsList::removeFinishedJobs() {
 //    }
 }
 
+void JobsList::removeJobById(int jobId) {
+    JobEntry job = this->map_of_smash_jobs.find(jobId)->second;
+    job.deleteCommand();
+
+    this->map_of_smash_jobs.erase(jobId);
+    int maxJob = return_max_job_id_in_Map();
+
+    set_max_from_jobs_id(maxJob);
+}
+
+int JobsList::return_max_job_id_in_Map() {
+    if (this->map_of_smash_jobs.size() == 0) {
+        return 0;
+    }
+    int max = 0;
+    for (const auto &job : this->map_of_smash_jobs) {
+        if (job.first > max) {
+            max = job.first;
+        }
+    }
+
+    return max;
+}
+
+void JobsList::set_max_from_jobs_id(int max_job_id) {
+    this->max_from_jobs_id = max_job_id;
+}
+
+
+const map<int, JobsList::JobEntry> &JobsList::get_map() const {
+    return this->map_of_smash_jobs;
+}
+
 
 ///
-/// #jobs section ends
+/// #job list end
 ///
 
 
+///
+/// #job entry begin
+///
+
+JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
+    this->time_of_command = time(nullptr);
+    this->jobID=jobId;
+    this->pid=pid;
+    if (this->time_of_command == -1) {
+        perror("smash error: time failed");
+    }
+}
 
 
+pid_t JobsList::JobEntry::getPid() const {
+    return this->pid;
+}
+
+void JobsList::JobEntry::deleteCommand() {
+    delete this->command;
+}
+
+void JobsList::JobEntry::setStopped(bool stopped) const {
+    this->command->setStopped(stopped);
+}
+
+///
+/// #job entry end
+///
+
+///
+/// #jobs section starts
+///
 
 
 ///
@@ -394,6 +521,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         else if (isStringCommand(command_line, "cd")) {
             return new ChangeDirCommand(cmd_line);
         }
+
+        else if (isStringCommand(command_line, "kill")) {
+            return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
+        }
+
+
     return nullptr;
 }
 
@@ -435,4 +568,12 @@ const string &SmallShell::getLastDir() const {
 
 void SmallShell::setLastDir(string lastDir) {
     this->last_dir = lastDir;
+}
+
+const JobsList &SmallShell::getJobsList() const {
+    return this->jobs;
+}
+
+JobsList *SmallShell::get_ptr_to_jobslist() {
+    return &(this->jobs);
 }
