@@ -257,14 +257,11 @@ void ChangeDirCommand::execute() {
 ///
 
 ///
-/// #JobsCommand
-/// \param cmd_line
-/// \param jobs
+/// jobs entry
+///
 
-JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
-void JobsCommand::execute() {
-    jobs_list->removeFinishedJobs();
-    jobs_list->printJobsList();
+const char *JobsList::JobEntry::getCommand() const {
+    return this->command->getCommandLine();
 }
 
 ///
@@ -302,14 +299,83 @@ void JobsList::removeFinishedJobs() {
 //    }
 }
 
+///
+/// #JobsCommand
+/// \param cmd_line
+/// \param jobs
+
+JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
+void JobsCommand::execute() {
+    jobs_list->removeFinishedJobs();
+    jobs_list->printJobsList();
+}
 
 ///
 /// #jobs section ends
 ///
 
 
+///
+/// #ForegroundCommand
+/// \param cmd_line
+/// \param jobs
 
+ForegroundCommand::ForegroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
 
+void ForegroundCommand::execute() {
+
+    int job_id;
+    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+
+    if (this->params.size() > 1) {
+        smashError("fg: invalid arguments");
+        return;
+    }
+
+    if (this->params.empty()) {
+        if (map.size() == 0) {
+            smashError("fg: jobs list is empty");
+            return;
+        }
+        //TODO: do we need to remove finished jobs before
+        job_id = this->jobs_list->return_max_job_id_in_Map();
+    }
+    else {
+        if (!checkIfInt(this->params[0])) {
+            smashError("fg: invalid arguments");
+            return;
+        }
+        job_id = stoi(this->params[0]);
+        this->jobs_list->removeFinishedJobs();
+
+        if (map.find(job_id) == map.end()) {
+            smashError("fg: job-id " + this->params[0] + " does not exist");
+            return;
+        }
+    }
+
+    JobsList::JobEntry currentJob = map.find(job_id)->second;
+    int pid_of_job = currentJob.getPid();
+    string command_line = currentJob.getCommand();
+
+    cout << command_line << " : " << pid_of_job << endl;
+//    currentJob.setBackground(false);
+//    smash.set_fg_process(pid_of_job);
+
+//    if (killpg(pid_of_job, SIGCONT) == -1) {
+//        perror("smash error: kill failed");
+//        return;
+//    }
+//    map.find(job_id)->second.setStopped(false);
+//    waitpid(pid_of_job, nullptr, WUNTRACED);
+//
+//    if (!map.find(job_id)->second.if_is_stopped()) {
+//        this->jobs_list->removeJobById(job_id);
+//    }
+//
+//    this->jobs_list->change_last_stopped_job_id();
+//    smash.set_fg_process(0);
+}
 
 
 ///
@@ -339,6 +405,10 @@ bool isStringCommand(string s, string command){
 //    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
     return b;
     //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
+}
+
+void smashError(string errMsg){
+    cerr << "smash error: " << errMsg << endl;
 }
 
 ///

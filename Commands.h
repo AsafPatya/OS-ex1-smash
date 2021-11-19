@@ -98,7 +98,11 @@ class JobsList;
 class JobsList {
  public:
   class JobEntry {
-   // TODO: Add your data members
+      JobEntry(int jobId, int pid, Command *cmd);
+      int getPid() const;
+      const char *getCommand() const;
+
+      // TODO: Add your data members
   };
  // TODO: Add your data members
 // std::map<int, JobEntry> map_of_smash_jobs;
@@ -137,6 +141,8 @@ class KillCommand : public BuiltInCommand {
 
 class ForegroundCommand : public BuiltInCommand {
  // TODO: Add your data members
+private:
+    JobsList *jobs_list;
  public:
   ForegroundCommand(const char* cmd_line, JobsList* jobs);
   virtual ~ForegroundCommand() {}
