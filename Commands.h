@@ -210,6 +210,9 @@ private:
 
 class QuitCommand : public BuiltInCommand {
 // TODO: Add your data members public:
+private:
+    JobsList *jobs_list;
+public:
     QuitCommand(const char* cmd_line, JobsList* jobs);
     virtual ~QuitCommand() {}
     void execute() override;
@@ -238,7 +241,9 @@ class SmallShell {
 
   SmallShell();
  public:
-  Command *CreateCommand(const char* cmd_line);
+    bool isquit= false;
+
+    Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
   void operator=(SmallShell const&)  = delete; // disable = operator
   static SmallShell& getInstance() // make SmallShell singleton
