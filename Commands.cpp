@@ -591,6 +591,14 @@ void JobsList::set_max_from_jobs_id(int max_job_id) {
     this->max_from_jobs_id = max_job_id;
 }
 
+void  JobsList::addJob(Command *cmd, bool isStopped) {
+    //todo: get the relevant ids
+    int job_id = 0;
+    int pid = 0;
+    JobEntry new_job(job_id, pid, cmd);
+    this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(job_id, new_job));
+}
+
 const map<int, JobsList::JobEntry> &JobsList::get_map() const {
     return this->map_of_smash_jobs;
 }
@@ -639,6 +647,56 @@ bool JobsList::JobEntry::if_is_stopped()const {
 ///
 
 
+///
+/// #ExternalCommand
+/// \param cmd_line
+/// \param is_bg
+ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
+    this->external = true;
+    this->background=is_bg;
+}
+void ExternalCommand::execute() {
+    int pid = fork();
+    if (pid == -1) {
+        smashError("fork failed", true);
+        return;
+    }
+    if (pid == 0) {
+        setpgrp();
+        char external_params[200] = {0};
+
+        strcpy(external_params, this->commandLine);
+        _trim(external_params);//todo: make sure what this command do
+        _removeBackgroundSign(external_params);
+
+        char* param0=(char *) "/bin/bash";
+        char*param1=(char *) "-c";
+        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
+        int ans = execv("/bin/bash", params_for_exec);
+
+        if (ans == -1) {
+            smashError("execv failed", true);
+            return;
+        }
+    }
+    else {
+        auto jobs = smash.get_ptr_to_jobslist();
+        jobs->removeFinishedJobs();
+        int new_job_id = jobs->addJob(this, false);
+
+        if (!(this->if_is_background())) {
+//            smash.set_fg_process(pid); todo
+            waitpid(pid, nullptr, WUNTRACED);
+            if (!jobs.get_map().find(new_job_id)->second.if_is_stopped()) {
+                // The process was not stopped while it was running, so it is safe to remove it from the jobs list
+                jobs->removeJobById(new_job_id);
+            }
+
+//            jobs->change_last_stopped_job_id();todo
+//            smash.set_fg_process(0);todo
+        }
+    }
+}
 
 
 

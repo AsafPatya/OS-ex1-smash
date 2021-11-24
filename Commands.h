@@ -17,7 +17,7 @@ class Command {
 protected:
     char *commandLine;
     vector<string> params;
-//    bool external = false;
+    bool external = false;
     bool stopped = false;
     bool background = false;
     bool foreground= false;
