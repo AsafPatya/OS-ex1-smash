@@ -591,6 +591,18 @@ void JobsList::set_max_from_jobs_id(int max_job_id) {
     this->max_from_jobs_id = max_job_id;
 }
 
+int JobsList::get_job_id_by_pid(int pid) {
+    if (this->map_of_smash_jobs.size() == 0) {
+        return 0;
+    }
+    for (const auto &job : this->map_of_smash_jobs) {
+        if (job.second.getPid() == pid) {
+            return job.first;
+        }
+    }
+    return 0;
+}
+
 void  JobsList::addJob(Command *cmd, bool isStopped) {
     //todo: get the relevant ids
     int job_id = 0;
@@ -722,8 +734,6 @@ SmallShell::~SmallShell() {
 }
 
 Command * SmallShell::CreateCommand(const char* cmd_line) {
-
-//    cout << "\n\ncreating command...\n\n"<< endl;
     string command_line = string(cmd_line);
 
 //    bool background = _isBackgroundComamnd(cmd_line);
@@ -816,4 +826,12 @@ const JobsList &SmallShell::getJobsList() const {
 
 JobsList *SmallShell::get_ptr_to_jobslist() {
     return &(this->jobs);
+}
+
+int SmallShell::get_fg_process() const {
+    return this->fgprocess;
+}
+
+void SmallShell::set_fg_process(int process_of_fg)  {
+    this->fgprocess = process_of_fg;
 }
