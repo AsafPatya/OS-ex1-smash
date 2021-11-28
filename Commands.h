@@ -133,6 +133,7 @@ class JobsList {
       void setStopped(bool stopped) const;
       bool if_is_background() const;
       void setBackground(bool mode) const;
+      string toString() const;
       ~JobEntry(){};
 
 
@@ -238,6 +239,7 @@ class SmallShell {
   string last_dir = "";
   string curr_dir = "";
   JobsList jobs;
+  int fgprocess;
 
   SmallShell();
  public:
@@ -267,6 +269,9 @@ class SmallShell {
     JobsList *get_ptr_to_jobslist();
     int get_fg_process() const;
     void set_fg_process(int process_of_fg);
+
+    void bringJobToForeGround(JobsList::JobEntry& jobEntry);
+    void sendJobToBackground(JobsList::JobEntry& jobEntry);
 };
 
 #endif //SMASH_

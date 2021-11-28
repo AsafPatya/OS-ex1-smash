@@ -29,57 +29,57 @@ extern SmallShell &smash;
 
 string _ltrim(const std::string& s)
 {
-  size_t start = s.find_first_not_of(WHITESPACE);
-  return (start == std::string::npos) ? "" : s.substr(start);
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == std::string::npos) ? "" : s.substr(start);
 }
 
 string _rtrim(const std::string& s)
 {
-  size_t end = s.find_last_not_of(WHITESPACE);
-  return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+    size_t end = s.find_last_not_of(WHITESPACE);
+    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
 }
 
 string _trim(const std::string& s)
 {
-  return _rtrim(_ltrim(s));
+    return _rtrim(_ltrim(s));
 }
 
 int _parseCommandLine(const char* cmd_line, char** args) {
-  FUNC_ENTRY()
-  int i = 0;
-  std::istringstream iss(_trim(string(cmd_line)).c_str());
-  for(std::string s; iss >> s; ) {
-    args[i] = (char*)malloc(s.length()+1);
-    memset(args[i], 0, s.length()+1);
-    strcpy(args[i], s.c_str());
-    args[++i] = NULL;
-  }
-  return i;
+    FUNC_ENTRY()
+    int i = 0;
+    std::istringstream iss(_trim(string(cmd_line)).c_str());
+    for(std::string s; iss >> s; ) {
+        args[i] = (char*)malloc(s.length()+1);
+        memset(args[i], 0, s.length()+1);
+        strcpy(args[i], s.c_str());
+        args[++i] = NULL;
+    }
+    return i;
 
-  FUNC_EXIT()
+    FUNC_EXIT()
 }
 
 bool _isBackgroundComamnd(const char* cmd_line) {
-  const string str(cmd_line);
-  return str[str.find_last_not_of(WHITESPACE)] == '&';
+    const string str(cmd_line);
+    return str[str.find_last_not_of(WHITESPACE)] == '&';
 }
 
 void _removeBackgroundSign(char* cmd_line) {
-  const string str(cmd_line);
-  // find last character other than spaces
-  unsigned int idx = str.find_last_not_of(WHITESPACE);
-  // if all characters are spaces then return
-  if (idx == string::npos) {
-    return;
-  }
-  // if the command line does not end with & then return
-  if (cmd_line[idx] != '&') {
-    return;
-  }
-  // replace the & (background sign) with space and then remove all tailing spaces.
-  cmd_line[idx] = ' ';
-  // truncate the command line string up to the last non-space character
-  cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
+    const string str(cmd_line);
+    // find last character other than spaces
+    unsigned int idx = str.find_last_not_of(WHITESPACE);
+    // if all characters are spaces then return
+    if (idx == string::npos) {
+        return;
+    }
+    // if the command line does not end with & then return
+    if (cmd_line[idx] != '&') {
+        return;
+    }
+    // replace the & (background sign) with space and then remove all tailing spaces.
+    cmd_line[idx] = ' ';
+    // truncate the command line string up to the last non-space character
+    cmd_line[str.find_last_not_of(WHITESPACE, idx) + 1] = 0;
 }
 
 ///new functions
@@ -375,19 +375,19 @@ void KillCommand::execute() {
 ForegroundCommand::ForegroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
 void ForegroundCommand::execute() {
     int job_id;
-    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+    map<int, JobsList::JobEntry> map = this->jobs_list->get_map();
 
     if (this->params.size() > 1) {
         smashError("fg: invalid arguments");
         return;
     }
 
+    ///getting the jobId
     if (this->params.empty()) {
         if (map.size() == 0) {
             smashError("fg: jobs list is empty");
             return;
         }
-        //TODO: do we need to remove finished jobs before
         job_id = this->jobs_list->return_max_job_id_in_Map();
     }
     else {
@@ -396,35 +396,39 @@ void ForegroundCommand::execute() {
             return;
         }
         job_id = stoi(this->params[0]);
-        this->jobs_list->removeFinishedJobs();
-
         if (map.find(job_id) == map.end()) {
             smashError("fg: job-id " + this->params[0] + " does not exist");
             return;
         }
     }
+    ///execute the command
 
+    this->jobs_list->removeFinishedJobs();
     JobsList::JobEntry currentJob = map.find(job_id)->second;
-    int pid_of_job = currentJob.getPid();
-    string command_line = currentJob.getCommand();
 
-    cout << command_line << " : " << pid_of_job << endl;
+    int pid = currentJob.getPid();
+//    string command = currentJob.getCommand();
+//
 //    currentJob.setBackground(false);
 //    smash.set_fg_process(pid_of_job);
 
-//    if (killpg(pid_of_job, SIGCONT) == -1) {
-//        perror("smash error: kill failed");
-//        return;
-//    }
+    cout << currentJob.toString() << endl;
+    smash.bringJobToForeGround(currentJob);
+
+    if (killpg(pid, SIGCONT) == -1) {
+        smashError("kill failed", true);
+        return;
+    }
 //    map.find(job_id)->second.setStopped(false);
-//    waitpid(pid_of_job, nullptr, WUNTRACED);
-//
+    waitpid(pid, nullptr, WUNTRACED);
+//    todo: implement. do we need the if statement?
 //    if (!map.find(job_id)->second.if_is_stopped()) {
-//        this->jobs_list->removeJobById(job_id);
+    this->jobs_list->removeJobById(job_id);
 //    }
 //
 //    this->jobs_list->change_last_stopped_job_id();
-//    smash.set_fg_process(0);
+
+    smash.set_fg_process(0);
 }
 
 ///
@@ -433,7 +437,7 @@ void ForegroundCommand::execute() {
 /// \param jobs
 BackgroundCommand::BackgroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
 void BackgroundCommand::execute() {
-    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+    map<int, JobsList::JobEntry> map = this->jobs_list->get_map();
     int job_id = 0;
 
     if (this->params.size() > 1) {
@@ -441,62 +445,49 @@ void BackgroundCommand::execute() {
         return;
     }
 
-    if(this->params.size() == 0){
-//        job_id = this->jobs_list->get_max_from_stopped_jobs_id();//todo
+    ///getting the jobId
 
-        if (job_id == 0) {
+    if(this->params.size() == 0){
+//        job_id = this->jobs_list->get_max_from_stopped_jobs_id();//todo get the jobId
+        if (job_id == 0) {//todo
             smashError("bg: there is no stopped jobs to resume");
             return;
         }
     }
-    else{
+    else {
         if (!checkIfInt(this->params[0])) {
             smashError("bg: invalid arguments");
             return;
         }
-        else {
-            job_id = stoi(this->params[0]);
-        }
+        job_id = stoi(this->params[0]);
         if (map.find(job_id) == map.end()) {
             smashError("bg: job-id " + this->params[0] + " does not exist");
             return;
         }
+    }
 
-        JobsList::JobEntry jobEntry = map.find(job_id)->second;
+    ///start the command
 
-        if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
-            smashError("bg: job-id " + this->params[0] + " is already running in the background");
+    JobsList::JobEntry jobEntry = map.find(job_id)->second;
+
+    if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
+        smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
+        return;
+    }
+    int pid_of_job = jobEntry.getPid();
+    cout << jobEntry.toString() << endl;
+    if (jobEntry.if_is_background() && jobEntry.if_is_stopped()) {
+        if (killpg(pid_of_job, SIGCONT) == -1) { // syscall failed
+            smashError(" kill failed");
             return;
         }
-        else if (jobEntry.if_is_background() && jobEntry.if_is_stopped()) {
-            int pid_of_job = jobEntry.getPid();
-            string command_line = jobEntry.getCommand();
-
-            cout << command_line << " : " << pid_of_job << endl;
-
-            if (killpg(pid_of_job, SIGCONT) == -1) {
-                // syscall failed
-                smashError(" kill failed");
-                return;
-            }
-
-            map.at(job_id).setStopped(false);
-//            this->jobs_list->change_last_stopped_job_id(); todo
+    } else{
+        if (kill(pid_of_job, SIGCONT) == -1) {
+            smashError(" kill failed");
             return;
-        }
-        else{
-            int pid_of_job = jobEntry.getPid();
-            string command_line = jobEntry.getCommand();
-            cout << command_line << " : " << pid_of_job << endl;
-
-            if (kill(pid_of_job, SIGCONT) == -1) {
-                smashError(" kill failed");
-                return;
-            }
-            map.at(job_id).setStopped(false);
-//            this->jobs_list->change_last_stopped_job_id(); todo
         }
     }
+    smash.sendJobToBackground(jobEntry);
 }
 
 ///
@@ -622,10 +613,6 @@ void  JobsList::addJob(Command *cmd, bool isStopped) {
     this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(job_id, new_job));
 }
 
-const map<int, JobsList::JobEntry> &JobsList::get_map() const {
-    return this->map_of_smash_jobs;
-}
-
 /// #job entry begin
 
 JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
@@ -669,6 +656,12 @@ time_t JobsList::JobEntry::get_time_of_command() const {
     return this->time_of_command;
 }
 
+string JobsList::JobEntry::toString() const {
+    int pid = this->getPid();
+    string command = this->getCommand();
+    return command + " : " + std::to_string(pid);
+}
+
 ///
 /// #jobs section ends
 ///
@@ -678,52 +671,52 @@ time_t JobsList::JobEntry::get_time_of_command() const {
 /// #ExternalCommand
 /// \param cmd_line
 /// \param is_bg
-ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
-    this->external = true;
-    this->background=is_bg;
-}
-void ExternalCommand::execute() {
-    int pid = fork();
-    if (pid == -1) {
-        smashError("fork failed", true);
-        return;
-    }
-    if (pid == 0) {
-        setpgrp();
-        char external_params[200] = {0};
-
-        strcpy(external_params, this->commandLine);
-        _trim(external_params);//todo: make sure what this command do
-        _removeBackgroundSign(external_params);
-
-        char* param0=(char *) "/bin/bash";
-        char*param1=(char *) "-c";
-        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
-        int ans = execv("/bin/bash", params_for_exec);
-
-        if (ans == -1) {
-            smashError("execv failed", true);
-            return;
-        }
-    }
-    else {
-        auto jobs = smash.get_ptr_to_jobslist();
-        jobs->removeFinishedJobs();
-        int new_job_id = jobs->addJob(this, false);
-
-        if (!(this->if_is_background())) {
-//            smash.set_fg_process(pid); todo
-            waitpid(pid, nullptr, WUNTRACED);
-            if (!jobs.get_map().find(new_job_id)->second.if_is_stopped()) {
-                // The process was not stopped while it was running, so it is safe to remove it from the jobs list
-                jobs->removeJobById(new_job_id);
-            }
-
-//            jobs->change_last_stopped_job_id();todo
-//            smash.set_fg_process(0);todo
-        }
-    }
-}
+//ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
+//    this->external = true;
+//    this->background=is_bg;
+//}
+//void ExternalCommand::execute() {
+//    int pid = fork();
+//    if (pid == -1) {
+//        smashError("fork failed", true);
+//        return;
+//    }
+//    if (pid == 0) {
+//        setpgrp();
+//        char external_params[200] = {0};
+//
+//        strcpy(external_params, this->commandLine);
+//        _trim(external_params);//todo: make sure what this command do
+//        _removeBackgroundSign(external_params);
+//
+//        char* param0=(char *) "/bin/bash";
+//        char*param1=(char *) "-c";
+//        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
+//        int ans = execv("/bin/bash", params_for_exec);
+//
+//        if (ans == -1) {
+//            smashError("execv failed", true);
+//            return;
+//        }
+//    }
+//    else {
+//        auto jobs = smash.get_ptr_to_jobslist();
+//        jobs->removeFinishedJobs();
+//        int new_job_id = jobs->addJob(this, false);
+//
+//        if (!(this->if_is_background())) {
+////            smash.set_fg_process(pid); todo
+//            waitpid(pid, nullptr, WUNTRACED);
+//            if (!jobs.get_map().find(new_job_id)->second.if_is_stopped()) {
+//                // The process was not stopped while it was running, so it is safe to remove it from the jobs list
+//                jobs->removeJobById(new_job_id);
+//            }
+//
+////            jobs->change_last_stopped_job_id();todo
+////            smash.set_fg_process(0);todo
+//        }
+//    }
+//}
 
 
 
@@ -774,24 +767,24 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 //        return new RedirectionCommand(cmd_line,background,override);
 //    }
 //    else
-        if (isStringCommand(command_line, "chprompt")) {
-            return new ChpromptCommand(cmd_line);
-        }
-        else if (isStringCommand(command_line, "showpid")) {
-            return new ShowPidCommand(cmd_line);
-        }
-        else if (isStringCommand(command_line, "pwd")) {
-            return new GetCurrDirCommand(cmd_line);
-        }
-        else if (isStringCommand(command_line, "cd")) {
-            return new ChangeDirCommand(cmd_line);
-        }
-        else if (isStringCommand(command_line, "kill")) {
-            return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
-        }
-        else if (isStringCommand(command_line, "quit")) {
-            return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
-        }
+    if (isStringCommand(command_line, "chprompt")) {
+        return new ChpromptCommand(cmd_line);
+    }
+    else if (isStringCommand(command_line, "showpid")) {
+        return new ShowPidCommand(cmd_line);
+    }
+    else if (isStringCommand(command_line, "pwd")) {
+        return new GetCurrDirCommand(cmd_line);
+    }
+    else if (isStringCommand(command_line, "cd")) {
+        return new ChangeDirCommand(cmd_line);
+    }
+    else if (isStringCommand(command_line, "kill")) {
+        return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
+    }
+    else if (isStringCommand(command_line, "quit")) {
+        return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
+    }
     return nullptr;
 }
 
@@ -801,8 +794,8 @@ void SmallShell::executeCommand(const char *cmd_line) {
 //        if (command->isExternal()) {
 //            command->execute();
 //        } else {
-            command->execute();
-            delete command;
+        command->execute();
+        delete command;
 //        }
     }
 }
@@ -849,4 +842,15 @@ int SmallShell::get_fg_process() const {
 
 void SmallShell::set_fg_process(int process_of_fg)  {
     this->fgprocess = process_of_fg;
+}
+
+void SmallShell::bringJobToForeGround(JobsList::JobEntry& jobEntry){
+    this->fgprocess = jobEntry.getPid();
+    jobEntry.setBackground(false);
+    jobEntry.setStopped(false);
+}
+
+void SmallShell::sendJobToBackground(JobsList::JobEntry& jobEntry) {
+    jobEntry.setStopped(false);
+//            this->jobs_list->change_last_stopped_job_id(); todo
 }
