@@ -136,8 +136,14 @@ bool isStringCommand(string s, string command){
     //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
 }
 
-void smashError(string errMsg){
-    cerr << "smash error: " << errMsg << endl;
+void smashError(string errMsg, bool isKernelError = false){
+    string baseMsg = "smash error: ";
+    if (isKernelError){
+        string msg = baseMsg + errMsg;
+        perror(msg.c_str());
+    }
+    else
+        cerr << baseMsg << errMsg << endl;
 }
 
 ///
@@ -321,7 +327,6 @@ void KillCommand::execute() {
         return;
     }
 
-
     int sig_num = 0;
     int job_id = 0;
     if (!checkIfInt(this->params[0]) || !checkIfInt(this->params[1])) {
@@ -329,13 +334,10 @@ void KillCommand::execute() {
         return;
     }
     else {
-
         sig_num = stoi(this->params[0]);
-
         job_id = stoi(this->params[1]);
     }
     if (job_id < 0) {
-
         cerr << "smash error: kill: job-id " << job_id << " does not exist" << endl;
         return;
     }
@@ -345,11 +347,7 @@ void KillCommand::execute() {
     }
     map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
     if (map.find(job_id) == map.end()) {
-        string msg="smash error: kill: job-id ";
-        msg+=to_string(job_id);
-        msg+=" does not exist";
-        cerr << msg<< endl;
-
+        smashError("kill: job-id " + to_string(job_id) + " does not exist");
         return;
     }
 
@@ -375,9 +373,7 @@ void KillCommand::execute() {
 /// \param jobs
 
 ForegroundCommand::ForegroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
-
 void ForegroundCommand::execute() {
-
     int job_id;
     map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
 
@@ -504,6 +500,34 @@ void BackgroundCommand::execute() {
 }
 
 ///
+/// #QuitCommand
+/// \param cmd_line
+/// \param jobs
+QuitCommand::QuitCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
+void QuitCommand::execute() {
+    this->jobs_list->removeFinishedJobs();
+    auto params = this->params;
+    if (!params.empty() && params[0] == "kill") {
+//        this->jobs_list->removeFinishedJobs();
+        map<int, JobsList::JobEntry> jobs = this->jobs_list->get_map();
+        cout << "smash: sending SIGKILL signal to " << jobs.size() << " jobs:" << endl;
+        for(auto job : jobs){
+            int pid = job.second.getPid();
+            string command = job.second.getCommand();
+            cout << pid << ": " << command << endl;
+            if (kill(pid, SIGKILL) == -1) {
+                smashError("kill failed");
+//                perror("smash error: kill failed");
+            }
+        }
+    }
+    smash.isquit = true;
+}
+
+
+
+
+///
 /// #jobs section starts
 ///
 
@@ -590,15 +614,19 @@ const map<int, JobsList::JobEntry> &JobsList::get_map() const {
     return this->map_of_smash_jobs;
 }
 
+void  JobsList::addJob(Command *cmd, bool isStopped) {
+    //todo: get the relevant ids
+    int job_id = 0;
+    int pid = 0;
+    JobEntry new_job(job_id, pid, cmd);
+    this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(job_id, new_job));
+}
 
-///
-/// #job list end
-///
+const map<int, JobsList::JobEntry> &JobsList::get_map() const {
+    return this->map_of_smash_jobs;
+}
 
-
-///
 /// #job entry begin
-///
 
 JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
     this->time_of_command = time(nullptr);
@@ -612,21 +640,27 @@ JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
 pid_t JobsList::JobEntry::getPid() const {
     return this->pid;
 }
+
 const char *JobsList::JobEntry::getCommand() const {
     return this->command->getCommandLine();
 }
+
 void JobsList::JobEntry::deleteCommand() {
     delete this->command;
 }
+
 bool JobsList::JobEntry::if_is_background() const {
     return this->command->if_is_background();
 }
+
 void JobsList::JobEntry::setBackground(bool mode) const {
     this->command->setBackground(mode);
 }
+
 void JobsList::JobEntry::setStopped(bool stopped) const {
     this->command->setStopped(stopped);
 }
+
 bool JobsList::JobEntry::if_is_stopped()const {
     return this->command->if_is_stopped();
 }
@@ -636,14 +670,60 @@ time_t JobsList::JobEntry::get_time_of_command() const {
 }
 
 ///
-/// #job entry end
-///
-
-///
 /// #jobs section ends
 ///
 
 
+///
+/// #ExternalCommand
+/// \param cmd_line
+/// \param is_bg
+ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
+    this->external = true;
+    this->background=is_bg;
+}
+void ExternalCommand::execute() {
+    int pid = fork();
+    if (pid == -1) {
+        smashError("fork failed", true);
+        return;
+    }
+    if (pid == 0) {
+        setpgrp();
+        char external_params[200] = {0};
+
+        strcpy(external_params, this->commandLine);
+        _trim(external_params);//todo: make sure what this command do
+        _removeBackgroundSign(external_params);
+
+        char* param0=(char *) "/bin/bash";
+        char*param1=(char *) "-c";
+        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
+        int ans = execv("/bin/bash", params_for_exec);
+
+        if (ans == -1) {
+            smashError("execv failed", true);
+            return;
+        }
+    }
+    else {
+        auto jobs = smash.get_ptr_to_jobslist();
+        jobs->removeFinishedJobs();
+        int new_job_id = jobs->addJob(this, false);
+
+        if (!(this->if_is_background())) {
+//            smash.set_fg_process(pid); todo
+            waitpid(pid, nullptr, WUNTRACED);
+            if (!jobs.get_map().find(new_job_id)->second.if_is_stopped()) {
+                // The process was not stopped while it was running, so it is safe to remove it from the jobs list
+                jobs->removeJobById(new_job_id);
+            }
+
+//            jobs->change_last_stopped_job_id();todo
+//            smash.set_fg_process(0);todo
+        }
+    }
+}
 
 
 
@@ -669,7 +749,6 @@ SmallShell::~SmallShell() {
 }
 
 Command * SmallShell::CreateCommand(const char* cmd_line) {
-//    cout << "\n\ncreating command...\n\n"<< endl;
     string command_line = string(cmd_line);
 
 //    bool background = _isBackgroundComamnd(cmd_line);
@@ -707,12 +786,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         else if (isStringCommand(command_line, "cd")) {
             return new ChangeDirCommand(cmd_line);
         }
-
         else if (isStringCommand(command_line, "kill")) {
             return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
         }
-
-
+        else if (isStringCommand(command_line, "quit")) {
+            return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
+        }
     return nullptr;
 }
 
@@ -762,4 +841,12 @@ const JobsList &SmallShell::getJobsList() const {
 
 JobsList *SmallShell::get_ptr_to_jobslist() {
     return &(this->jobs);
+}
+
+int SmallShell::get_fg_process() const {
+    return this->fgprocess;
+}
+
+void SmallShell::set_fg_process(int process_of_fg)  {
+    this->fgprocess = process_of_fg;
 }

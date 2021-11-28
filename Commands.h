@@ -17,7 +17,7 @@ class Command {
 protected:
     char *commandLine;
     vector<string> params;
-//    bool external = false;
+    bool external = false;
     bool stopped = false;
     bool background = false;
     bool foreground= false;
@@ -210,6 +210,9 @@ private:
 
 class QuitCommand : public BuiltInCommand {
 // TODO: Add your data members public:
+private:
+    JobsList *jobs_list;
+public:
     QuitCommand(const char* cmd_line, JobsList* jobs);
     virtual ~QuitCommand() {}
     void execute() override;
@@ -238,7 +241,9 @@ class SmallShell {
 
   SmallShell();
  public:
-  Command *CreateCommand(const char* cmd_line);
+    bool isquit= false;
+
+    Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
   void operator=(SmallShell const&)  = delete; // disable = operator
   static SmallShell& getInstance() // make SmallShell singleton
@@ -260,6 +265,8 @@ class SmallShell {
     void setLastDir(string lastDir);
     const JobsList &getJobsList() const;
     JobsList *get_ptr_to_jobslist();
+    int get_fg_process() const;
+    void set_fg_process(int process_of_fg);
 };
 
 #endif //SMASH_
