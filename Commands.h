@@ -52,22 +52,30 @@ class ExternalCommand : public Command {
   void execute() override;
 };
 
+///
+/// special commands
+///
+
 class PipeCommand : public Command {
-  // TODO: Add your data members
- public:
-  PipeCommand(const char* cmd_line);
-  virtual ~PipeCommand() {}
-  void execute() override;
+    // TODO: Add your data members
+private:
+    bool ifout;
+public:
+    PipeCommand(const char* cmd_line, bool out1);
+    virtual ~PipeCommand() {}
+    void execute() override;
 };
 
 class RedirectionCommand : public Command {
- // TODO: Add your data members
- public:
-  explicit RedirectionCommand(const char* cmd_line);
-  virtual ~RedirectionCommand() {}
-  void execute() override;
-  //void prepare() override;
-  //void cleanup() override;
+    // TODO: Add your data members
+private:
+    bool override;
+public:
+    explicit RedirectionCommand(const char* cmd_line,bool background_flag,bool override_flag);
+    virtual ~RedirectionCommand() {}
+    void execute() override;
+    //void prepare() override;
+    //void cleanup() override;
 };
 
 
@@ -238,6 +246,7 @@ class SmallShell {
   string last_dir = "";
   string curr_dir = "";
   JobsList jobs;
+  int fgprocess;
 
   SmallShell();
  public:

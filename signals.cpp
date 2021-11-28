@@ -14,7 +14,7 @@ void ctrlZHandler(int sig_num) {
     if (fgprocess != 0) {
         auto jobs = smash.get_ptr_to_jobslist();
         int jobID = jobs->get_job_id_by_pid(fgprocess);
-        jobs.get_map().find(jobID)->second.setStopped(true);
+        jobs->get_map().find(jobID)->second.setStopped(true);
         if (kill(fgprocess, SIGSTOP) == -1) {
             perror("smash error: kill failed");
             return;
@@ -36,7 +36,6 @@ void ctrlCHandler(int sig_num) {
         std::cout << "smash: process " << fgprocess << " was killed" << std::endl;
     }
 }
-
 void alarmHandler(int sig_num) {
   // TODO: Add your implementation
 }

@@ -7,6 +7,11 @@
 #include <iomanip>
 #include "Commands.h"
 #include <unistd.h>
+#include <algorithm>
+#include <fcntl.h>
+
+
+
 
 using namespace std;
 const std::string WHITESPACE = " \n\r\t\f\v";
@@ -110,6 +115,129 @@ bool checkIfInt(const string &str) {
         }
     }
     return true;
+}
+
+vector<string> get_param_of_pipe(const string &str) {
+
+    vector<string> result = {"", ""};
+    bool is_second_arg = false;
+
+    for(auto ch : str){
+        if (ch != '|') {
+            if (is_second_arg == false) {
+                result[0].push_back(ch);
+            } else {
+                if (result[1].size() == 0 && ch== ' ') {
+                    continue;
+                }
+                result[1].push_back(ch);
+            }
+        }
+        else {
+            is_second_arg = true;
+            int last_index = result[0].length()-1;
+            if (result[0][last_index] == ' ') {
+                result[0].erase(last_index, 1);
+            }
+        }
+    }
+
+    return result;
+}
+
+
+vector<string> get_param_of_pipe_with_arr(const string &str) {
+
+    vector<string> result = {"", ""};
+    bool is_second_arg = false;
+    bool found_first= false;
+
+
+    for(auto ch:str){
+        if(found_first==true){
+            found_first=false;
+            continue;
+        }
+        else if (ch != '|') {
+            if (is_second_arg == false) {
+                result[0].push_back(ch);
+            } else {
+                if (result[1].size() == 0 && ch == ' ') {
+                    continue;
+                }
+                result[1].push_back(ch);
+            }
+        }
+        else {
+            is_second_arg = true;
+            found_first= true;
+            int last_index = result[0].length()-1;
+            if (result[0][last_index]== ' ') {
+                result[0].erase(last_index, 1);
+            }
+        }
+    }
+
+    return result;
+}
+
+
+vector<string> get_param_case_override(const string &str) {
+
+    vector<string> result = {"", ""};
+    bool is_second_arg = false;
+
+    for(auto ch:str){
+        if (ch != '>') {
+            if (is_second_arg == false) {
+                result[0].push_back(ch);
+            } else {
+                if (result[1].size() == 0 && ch == ' ') {
+                    continue;
+                }
+                result[1].push_back(ch);
+            }
+        }
+        else {
+            is_second_arg = true;
+            int last_index=result[0].length()-1;
+            if (result[0][last_index] == ' ') {
+                result[0].erase(last_index, 1);
+            }
+        }
+    }
+    return result;
+}
+vector<string> get_param_case_append(const string &str) {
+
+    vector<string> result = {"", ""};
+    bool is_second_arg = false;
+    bool found_first= false;
+    for(auto ch:str){
+        if(found_first== true){
+            found_first= false;
+            continue;
+        }
+        else if (ch != '>') {
+            if (is_second_arg == false) {
+                result[0].push_back(ch);
+            } else {
+                if (result[1].size() == 0 && ch == ' ') {
+                    continue;
+                }
+                result[1].push_back(ch);
+            }
+        }
+        else {
+            is_second_arg = true;
+            found_first= true;
+            int last_index=result[0].length()-1;
+            if (result[0][last_index]== ' ') {
+                result[0].erase(last_index, 1);
+            }
+        }
+    }
+    return result;
 }
 
 ///
@@ -622,10 +750,6 @@ void  JobsList::addJob(Command *cmd, bool isStopped) {
     this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(job_id, new_job));
 }
 
-const map<int, JobsList::JobEntry> &JobsList::get_map() const {
-    return this->map_of_smash_jobs;
-}
-
 /// #job entry begin
 
 JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
@@ -678,60 +802,273 @@ time_t JobsList::JobEntry::get_time_of_command() const {
 /// #ExternalCommand
 /// \param cmd_line
 /// \param is_bg
-ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
-    this->external = true;
-    this->background=is_bg;
-}
-void ExternalCommand::execute() {
-    int pid = fork();
-    if (pid == -1) {
-        smashError("fork failed", true);
-        return;
-    }
-    if (pid == 0) {
-        setpgrp();
-        char external_params[200] = {0};
+//ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
+//    this->external = true;
+//    this->background=is_bg;
+//}
+//void ExternalCommand::execute() {
+//    int pid = fork();
+//    if (pid == -1) {
+//        smashError("fork failed", true);
+//        return;
+//    }
+//    if (pid == 0) {
+//        setpgrp();
+//        char external_params[200] = {0};
+//
+//        strcpy(external_params, this->commandLine);
+//        _trim(external_params);//todo: make sure what this command do
+//        _removeBackgroundSign(external_params);
+//
+//        char* param0=(char *) "/bin/bash";
+//        char*param1=(char *) "-c";
+//        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
+//        int ans = execv("/bin/bash", params_for_exec);
+//
+//        if (ans == -1) {
+//            smashError("execv failed", true);
+//            return;
+//        }
+//    }
+//    else {
+//        auto jobs = smash.get_ptr_to_jobslist();
+//        jobs->removeFinishedJobs();
+//        int new_job_id = jobs->addJob(this, false);
+//
+//        if (!(this->if_is_background())) {
+////            smash.set_fg_process(pid); todo
+//            waitpid(pid, nullptr, WUNTRACED);
+//            if (!jobs.get_map().find(new_job_id)->second.if_is_stopped()) {
+//                // The process was not stopped while it was running, so it is safe to remove it from the jobs list
+//                jobs->removeJobById(new_job_id);
+//            }
+//
+////            jobs->change_last_stopped_job_id();todo
+////            smash.set_fg_process(0);todo
+//        }
+//    }
+//}
 
-        strcpy(external_params, this->commandLine);
-        _trim(external_params);//todo: make sure what this command do
-        _removeBackgroundSign(external_params);
 
-        char* param0=(char *) "/bin/bash";
-        char*param1=(char *) "-c";
-        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
-        int ans = execv("/bin/bash", params_for_exec);
 
-        if (ans == -1) {
-            smashError("execv failed", true);
-            return;
-        }
+///
+/// special commands start
+///
+
+///
+/// pipe command
+///
+PipeCommand::PipeCommand(const char *cmd_line, bool out1): Command(cmd_line), ifout(out1) {}
+void PipeCommand::execute() {
+    vector<string> params_of_pipe;
+    if (ifout) {
+        params_of_pipe = get_param_of_pipe(this->commandLine);
     }
     else {
-        auto jobs = smash.get_ptr_to_jobslist();
-        jobs->removeFinishedJobs();
-        int new_job_id = jobs->addJob(this, false);
-
-        if (!(this->if_is_background())) {
-//            smash.set_fg_process(pid); todo
-            waitpid(pid, nullptr, WUNTRACED);
-            if (!jobs.get_map().find(new_job_id)->second.if_is_stopped()) {
-                // The process was not stopped while it was running, so it is safe to remove it from the jobs list
-                jobs->removeJobById(new_job_id);
-            }
-
-//            jobs->change_last_stopped_job_id();todo
-//            smash.set_fg_process(0);todo
-        }
+        params_of_pipe = get_param_of_pipe_with_arr(this->commandLine);
     }
+
+    if (params_of_pipe.size() != 2) {
+        smashError("invalid arguments");
+        return;
+    }
+
+    if (params_of_pipe[0].empty() || params_of_pipe[1].empty()) {
+        smashError("invalid arguments");
+        return;
+    }
+
+    int mypipe[2];
+
+    if (pipe(mypipe) == -1) {
+        smashError("pipe failed");
+        return;
+    }
+
+    int channel;
+    if (ifout == 1) {
+        channel = 1;
+    }
+    else{
+        channel = 2;
+    }
+
+//    int sec_place_of_channel = dup(channel);
+//    if (sec_place_of_channel == -1) {
+//        perror("smash error: dup failed");
+//        return;
+//    }
+
+    int pid1 = fork();
+    int pid2;
+    if (pid1 == -1) {
+        smashError("fork failed" );
+        return;
+    }
+    if (pid1 == 0) {
+        setpgrp();
+        if (dup2(mypipe[1], channel) == -1) {
+            smashError("dup2 failed");
+            return;
+        }
+        if (close(mypipe[0]) == -1) {
+            smashError("close failed");
+            return;
+        }
+        if (close(mypipe[1]) == -1) {
+            smashError("close failed");
+            return;
+        }
+        smash.executeCommand(params_of_pipe[0].c_str());
+        exit(0);
+    }
+    else {
+        pid2 = fork();
+        //setrpgp
+        if (pid2 == -1) {
+            smashError("fork failed");
+            return;
+        }
+        if (pid2 == 0) {
+            if (dup2(mypipe[0], 0) == -1) {
+                smashError("dup2 failed");
+                return;
+            }
+            if (close(mypipe[0]) == -1) {
+                smashError("close failed");
+                return;
+            }
+            if (close(mypipe[1]) == -1) {
+                smashError("close failed");
+                return;
+            }
+            smash.executeCommand(params_of_pipe[1].c_str());
+            exit(0);
+        }
+
+    }
+
+    if (close(mypipe[0]) == -1) {
+        smashError("close failed");
+        return;
+    }
+    if (close(mypipe[1]) == -1) {
+        smashError("close failed");
+        return;
+    }
+//    if (dup2(sec_place_of_channel, channel) == -1) {
+//        perror("smash error: dup2 failed");
+//        return;
+//    }
+    //   wait(pid1);
+    // wait(pid2);
+    waitpid(pid1, NULL, WUNTRACED);
+    waitpid(pid2, NULL, WUNTRACED);
 }
+
+
+///
+/// redirection command
+///
+
+RedirectionCommand::RedirectionCommand(const char *cmd_line, bool background_flag, bool override_flag):Command(cmd_line),
+                                                                                             override(override_flag){
+    this->background=background_flag;
+}
+
+void RedirectionCommand::execute() {
+    vector<string> params_to_rc;
+    if (this->override) {
+        params_to_rc = get_param_case_override(this->commandLine);
+    }
+    else {
+        params_to_rc = get_param_case_append(this->commandLine);
+    }
+    if (params_to_rc.size() != 2) {
+        smashError("invalid argument");
+        return;
+    }
+    if (params_to_rc[1].empty() || params_to_rc[0].empty()) {
+        smashError("invalid argument");
+        return;
+    }
+
+    if (this->background) {
+
+        params_to_rc[0]+=" &";
+        string rm_ampersand = "";
+
+        for (char c : params_to_rc[1]) {
+            if (c != '&') {
+                rm_ampersand.push_back(c);
+            }
+        }
+        rm_ampersand.erase(std::find_if(rm_ampersand.rbegin(), rm_ampersand.rend(), std::bind1st(std::not_equal_to<char>(), ' ')).base(), rm_ampersand.end());
+        params_to_rc[1] = rm_ampersand;
+    }
+    string file_name = params_to_rc[1];
+    Command *command = smash.CreateCommand(params_to_rc[0].c_str());
+    int ans_dup = dup(1);
+
+    if (ans_dup == -1) {
+        smashError("dup failed");
+        delete command;
+        return;
+    }
+
+    if (close(1) == -1) {
+        smashError("close failed");
+        delete command;
+        return;
+    }
+
+    int ans;
+    if (this->override) {
+        ans = open(file_name.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+
+    }
+    else {
+        ans = open(file_name.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0666);
+    }
+    if (ans == -1) {
+        smashError("open failed");
+        dup2(ans_dup, 1);
+        delete command;
+        return;
+    }
+
+    smash.executeCommand(command->getCommandLine());
+    if (close(1) == -1) {
+        smashError("close failed");
+        dup2(ans_dup, 1);
+        delete command;
+        return;
+    }
+
+    if (dup(ans_dup) == -1) {
+        smashError("dup failed");
+    }
+
+    if (close(ans_dup) == -1) {
+        smashError("close failed");
+    }
+    delete command;
+
+}
+
+
+
+
+///
+/// special commands end
+///
+
 
 
 
 ///
 /// smash section
 ///
-
-
 
 
 ///
