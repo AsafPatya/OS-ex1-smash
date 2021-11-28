@@ -303,7 +303,10 @@ void ChangeDirCommand::execute() {
 
 JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
 void JobsCommand::execute() {
+    JobsList* jobs_list=smash.get_ptr_to_jobslist();
+
     jobs_list->removeFinishedJobs();
+
     jobs_list->printJobsList();
 }
 
@@ -509,34 +512,34 @@ void BackgroundCommand::execute() {
 ///
 
 void JobsList::printJobsList() {
-//    for (auto &job : this->map_of_smash_jobs) {
-//        time_t now = time(nullptr);
-//        if (now == -1) {
-//            perror("smash error: time failed");
-//            return;
-//        }
-//        cout << "[" << job.second.getJobId() << "] " << job.second.getCommand() << " : "
-//             << job.second.getPid() << " "
-//             << difftime(now, job.second.get_time_of_command()) << " secs";
-//        if (job.second.if_is_stopped()) {
-//            cout << " (stopped)";
-//        }
-//        cout << endl;
-//    }
+    for (auto &job : this->map_of_smash_jobs) {
+        time_t now = time(nullptr);
+        if (now == -1) {
+            perror("smash error: time failed");
+            return;
+        }
+        cout << "[" << job.second.getJobId() << "] " << job.second.getCommand() << " : "
+             << job.second.getPid() << " "
+             << difftime(now, job.second.get_time_of_command()) << " secs";
+        if (job.second.if_is_stopped()) {
+            cout << " (stopped)";
+        }
+        cout << endl;
+    }
 }
 
 void JobsList::removeFinishedJobs() {
-//    int status;
-//    int childPid = waitpid(-1, &status, WNOHANG);
-//    while (childPid > 0) {
-//
-//        int jobId = get_job_id_by_pid(childPid);
-//        if (jobId != 0) {
-//            removeJobById(jobId);
-//        }
-//
-//        childPid = waitpid(-1, &status, WNOHANG);
-//    }
+    int status;
+    int childPid = waitpid(-1, &status, WNOHANG);
+    while (childPid > 0) {
+
+        int jobId = get_job_id_by_pid(childPid);
+        if (jobId != 0) {
+            removeJobById(jobId);
+        }
+
+        childPid = waitpid(-1, &status, WNOHANG);
+    }
 }
 
 void JobsList::removeJobById(int jobId) {
@@ -565,6 +568,22 @@ int JobsList::return_max_job_id_in_Map() {
 
 void JobsList::set_max_from_jobs_id(int max_job_id) {
     this->max_from_jobs_id = max_job_id;
+}
+
+int JobsList::get_job_id_by_pid(int pid) {
+    if (this->map_of_smash_jobs.size() == 0) {
+        return 0;
+    }
+    for (const auto &job : this->map_of_smash_jobs) {
+        if (job.second.getPid() == pid) {
+            return job.first;
+        }
+    }
+    return 0;
+}
+
+int JobsList::JobEntry::getJobId() const {
+    return this->jobID;
 }
 
 const map<int, JobsList::JobEntry> &JobsList::get_map() const {
@@ -610,6 +629,10 @@ void JobsList::JobEntry::setStopped(bool stopped) const {
 }
 bool JobsList::JobEntry::if_is_stopped()const {
     return this->command->if_is_stopped();
+}
+
+time_t JobsList::JobEntry::get_time_of_command() const {
+    return this->time_of_command;
 }
 
 ///
