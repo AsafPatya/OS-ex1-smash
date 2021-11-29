@@ -36,7 +36,6 @@ void ctrlCHandler(int sig_num) {
         std::cout << "smash: process " << fgprocess << " was killed" << std::endl;
     }
 }
-
 void alarmHandler(int sig_num) {
   // TODO: Add your implementation
 }
