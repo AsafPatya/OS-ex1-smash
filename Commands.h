@@ -33,7 +33,7 @@ protected:
     void setStopped(bool stopped);
     bool if_is_background() const;
     void setBackground(bool background);
-//    bool isExternal() const;
+    bool isExternal() const;
     const char *getCommandLine() const;
 //    const vector<string> &getParams() const;
 //    const string &getStartCommand() const;

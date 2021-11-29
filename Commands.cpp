@@ -316,6 +316,10 @@ const char *Command::getCommandLine() const {
     return this->commandLine;
 }
 
+bool Command::isExternal() const {
+    return this->external;
+}
+
 ///
 /// #BuiltInCommand
 /// \param cmd_line
@@ -1089,7 +1093,7 @@ SmallShell::~SmallShell() {
 Command * SmallShell::CreateCommand(const char* cmd_line) {
     string command_line = string(cmd_line);
 
-//    bool background = _isBackgroundComamnd(cmd_line);
+    bool background = _isBackgroundComamnd(cmd_line);
 //
 //    bool ans_to_pipe1 = is_out(command_line);
 //    bool ans_to_pipe_err1 = is_err(command_line);
@@ -1137,8 +1141,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         return new BackgroundCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
     else if (isStringCommand(command_line, "quit")) {
-        printf("asd");
         return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
+    }
+    else {
+        if (command_line.empty()) {
+            return nullptr;
+        }
+        return new ExternalCommand(cmd_line, background);
     }
     return nullptr;
 }
@@ -1146,12 +1155,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 void SmallShell::executeCommand(const char *cmd_line) {
     Command *command = CreateCommand(cmd_line);
     if (command) {
-//        if (command->isExternal()) {
-//            command->execute();
-//        } else {
+        if (command->isExternal()) {
+            command->execute();
+        } else {
         command->execute();
         delete command;
-//        }
+        }
     }
 }
 
