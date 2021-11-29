@@ -240,6 +240,20 @@ vector<string> get_param_case_append(const string &str) {
     return result;
 }
 
+bool is_ovveride(const string &str) {
+    return (str.find(">") != str.npos);
+}
+
+bool is_append(const string &str) {
+    return (str.find(">>") != str.npos);
+}
+bool is_out(const string &str) {
+    return (str.find("|") != str.npos);
+}
+bool is_err(const string &str) {
+    return (str.find("|&") != str.npos);
+}
+
 ///
 /// smash helper functions
 ///
@@ -1360,33 +1374,33 @@ SmallShell::SmallShell() {
 SmallShell::~SmallShell() {
 // TODO: add your implementation
 }
-
+// asaf
 Command * SmallShell::CreateCommand(const char* cmd_line) {
     string command_line = string(cmd_line);
 
     bool background = _isBackgroundComamnd(cmd_line);
-//
-//    bool ans_to_pipe1 = is_out(command_line);
-//    bool ans_to_pipe_err1 = is_err(command_line);
-//
-//    bool ans_to_override1 = is_ovveride(command_line);
-//    bool ans_to_append1 = is_append(command_line);
-//
-//    if (ans_to_pipe1 || ans_to_pipe_err1) {
-//        bool isout = true;
-//        if(ans_to_pipe_err1){
-//            isout= false;
-//        }
-//        return new PipeCommand(cmd_line,isout);
-//    }
-//    else if (ans_to_append1 || ans_to_override1) {
-//        bool override = true;
-//        if (ans_to_append1) {
-//            override = false;
-//        }
-//        return new RedirectionCommand(cmd_line,background,override);
-//    }
-//    else
+
+    bool ans_to_pipe1 = is_out(command_line);
+    bool ans_to_pipe_err1 = is_err(command_line);
+
+    bool ans_to_override1 = is_ovveride(command_line);
+    bool ans_to_append1 = is_append(command_line);
+
+    if (ans_to_pipe1 || ans_to_pipe_err1) {
+        bool isout = true;
+        if(ans_to_pipe_err1){
+            isout= false;
+        }
+        return new PipeCommand(cmd_line,isout);
+    }
+    else if (ans_to_append1 || ans_to_override1) {
+        bool override = true;
+        if (ans_to_append1) {
+            override = false;
+        }
+        return new RedirectionCommand(cmd_line,background,override);
+    }
+    else
     if (isStringCommand(command_line, "chprompt")) {
         return new ChpromptCommand(cmd_line);
     }
