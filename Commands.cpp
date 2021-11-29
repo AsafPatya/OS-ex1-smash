@@ -456,9 +456,7 @@ void ChangeDirCommand::execute() {
 JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
 void JobsCommand::execute() {
     JobsList* jobs_list=smash.get_ptr_to_jobslist();
-
     jobs_list->removeFinishedJobs();
-
     jobs_list->printJobsList();
 }
 
@@ -751,9 +749,17 @@ const map<int, JobsList::JobEntry> &JobsList::get_map() const {
 
 int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
     if (jobId == -1){
+        jobId = 0;
+        for (auto jobEntry : this->get_map()) {
+            int currentJobId = jobEntry.second.getJobId();
+            if (currentJobId > jobId)
+                jobId = currentJobId;
+        }
+
 //        jobId = max todo
 //        set new max todo
     }
+    jobId++;
     JobEntry new_job(jobId, pid, cmd);
     this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(jobId, new_job));
     return jobId;
