@@ -126,18 +126,15 @@ class JobsList {
       int getJobId() const;
 //      void setJobId(int jobId);
       time_t get_time_of_command() const;
-//      void set_time_of_command(time_t time);
+      void set_time_of_command(time_t time);
      const char *getCommand() const;
       void deleteCommand();
       bool if_is_stopped() const;
       void setStopped(bool stopped) const;
       bool if_is_background() const;
       void setBackground(bool mode) const;
+      string toString() const;
       ~JobEntry(){};
-
-
-
-
   };
  // TODO: Add your data members
 private:
@@ -238,6 +235,7 @@ class SmallShell {
   string last_dir = "";
   string curr_dir = "";
   JobsList jobs;
+  int fgprocess;
 
   SmallShell();
  public:
@@ -267,6 +265,9 @@ class SmallShell {
     JobsList *get_ptr_to_jobslist();
     int get_fg_process() const;
     void set_fg_process(int process_of_fg);
+
+    void bringJobToForeGround(JobsList::JobEntry& jobEntry);
+    void sendJobToBackground(JobsList::JobEntry& jobEntry);
 };
 
 #endif //SMASH_
