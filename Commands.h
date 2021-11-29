@@ -126,7 +126,7 @@ class JobsList {
       int getJobId() const;
 //      void setJobId(int jobId);
       time_t get_time_of_command() const;
-//      void set_time_of_command(time_t time);
+      void set_time_of_command(time_t time);
      const char *getCommand() const;
       void deleteCommand();
       bool if_is_stopped() const;
@@ -135,10 +135,6 @@ class JobsList {
       void setBackground(bool mode) const;
       string toString() const;
       ~JobEntry(){};
-
-
-
-
   };
  // TODO: Add your data members
 private:

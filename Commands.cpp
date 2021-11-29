@@ -527,16 +527,17 @@ void QuitCommand::execute() {
 ///
 
 void JobsList::printJobsList() {
-    for (auto &job : this->map_of_smash_jobs) {
+    for (auto &jobEntry : this->map_of_smash_jobs) {
         time_t now = time(nullptr);
         if (now == -1) {
-            perror("smash error: time failed");
+            smashError("time failed", true);
             return;
         }
-        cout << "[" << job.second.getJobId() << "] " << job.second.getCommand() << " : "
-             << job.second.getPid() << " "
-             << difftime(now, job.second.get_time_of_command()) << " secs";
-        if (job.second.if_is_stopped()) {
+        auto job = jobEntry.second;
+        cout << "[" << job.getJobId() << "] " << job.getCommand() << " : "
+             << job.getPid() << " "
+             << difftime(now, job.get_time_of_command()) << " secs";
+        if (job.if_is_stopped()) {
             cout << " (stopped)";
         }
         cout << endl;
@@ -547,12 +548,10 @@ void JobsList::removeFinishedJobs() {
     int status;
     int childPid = waitpid(-1, &status, WNOHANG);
     while (childPid > 0) {
-
         int jobId = get_job_id_by_pid(childPid);
         if (jobId != 0) {
             removeJobById(jobId);
         }
-
         childPid = waitpid(-1, &status, WNOHANG);
     }
 }
@@ -654,6 +653,10 @@ bool JobsList::JobEntry::if_is_stopped()const {
 
 time_t JobsList::JobEntry::get_time_of_command() const {
     return this->time_of_command;
+}
+
+void JobsList::JobEntry::set_time_of_command(time_t time)  {
+    this->time_of_command=time;
 }
 
 string JobsList::JobEntry::toString() const {
@@ -781,6 +784,15 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     }
     else if (isStringCommand(command_line, "kill")) {
         return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
+    }
+    else if (isStringCommand(command_line, "jobs")) {
+        return new JobsCommand(cmd_line, smash.get_ptr_to_jobslist());
+    }
+    else if (isStringCommand(command_line, "fg")) {
+        return new ForegroundCommand(cmd_line,smash.get_ptr_to_jobslist());
+    }
+    else if (isStringCommand(command_line, "bg")) {
+        return new BackgroundCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
     else if (isStringCommand(command_line, "quit")) {
         return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
