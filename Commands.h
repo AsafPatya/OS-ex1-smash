@@ -80,6 +80,70 @@ public:
 
 
 
+
+///
+/// timeout command
+///
+
+
+
+class TimeList {
+public:
+    class TimeEntry {
+    private:
+        int id = 0;
+        int job_id = 0;
+        int pid = 0;
+        int timeOfDur = 0;
+        char *command;
+        time_t timeOfCommandCame;
+    public:
+        TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command);
+//
+//        int getJobId() const;
+//
+//        int getPid() const;
+        int getTimeOfDur() const;
+//
+//        char *getCommand() const;
+//
+        time_t getTimeOfCommandCame() const;
+//
+        ~TimeEntry() {};
+    };
+
+private:
+    int maxTimeId = 0;
+    std::map<int, TimeEntry> timeMap;
+
+public:
+    TimeList()=default;
+    int getMaxId();
+    int getMaxKeyInMap();
+    void setMaxTimeId(int maxTimeEntryId);
+    int addTime(int job_id, int pid, int timeOfDur, char *command);
+    void removeTimeById(int time_entry_Id);
+//    int get_TimeId_Of_finished_Timeout(time_t now);
+//    int get_JobId_Of_finished_timeout(time_t now);
+//    void change_Max_TimeId();
+    void What_is_the_Next_Timeout(time_t now);
+//    const std::map<int, TimeEntry> &getTimeMap() const;
+//
+    ~TimeList() {};
+
+};
+
+
+class TimeoutCommand : public Command {
+public:
+    TimeoutCommand(const char *cmd_line, bool isBackground_flag);
+
+    virtual ~TimeoutCommand() {}
+
+    void execute() override;
+};
+
+
 ///
 /// general commands
 ///
@@ -169,7 +233,7 @@ public:
 //   void set_max_from_stopped_jobs_id(int max_stopped_job_id);
    int return_max_job_id_in_Map();
    int get_job_id_by_pid(int pid);
-//   void change_last_stopped_job_id();
+   void change_last_stopped_job_id();
     const std::map<int, JobEntry> &get_map() const;
 };
 
@@ -243,6 +307,7 @@ class SmallShell {
   string last_dir = "";
   string curr_dir = "";
   JobsList jobs;
+  TimeList times;
   int fgprocess;
 
   SmallShell();
@@ -273,6 +338,8 @@ class SmallShell {
     JobsList *get_ptr_to_jobslist();
     int get_fg_process() const;
     void set_fg_process(int process_of_fg);
+    const TimeList &getTimeList() const;
+    TimeList *get_ptr_to_Timelist();
 
     void bringJobToForeGround(JobsList::JobEntry& jobEntry);
     void sendJobToBackground(JobsList::JobEntry& jobEntry);

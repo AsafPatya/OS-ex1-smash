@@ -741,6 +741,22 @@ int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
     return jobId;
 }
 
+void JobsList::change_last_stopped_job_id() {
+    ///checkvalgrind
+    JobsList jl = smash.getJobsList();
+    map<int, JobsList::JobEntry> Map = jl.get_map();
+    if (Map.size() == 0) {
+        this->max_from_stopped_jobs_id = 0;
+    }
+    int Max = 0;
+    for (auto job : Map ){
+        if (job.first > Max && job.second.if_is_stopped()) {
+            Max = job.first;
+        }
+    }
+    this->max_from_stopped_jobs_id  = Max;
+}
+
 /// #job entry begin
 
 JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
@@ -1054,7 +1070,6 @@ void RedirectionCommand::execute() {
         smashError("close failed");
     }
     delete command;
-
 }
 
 
@@ -1063,6 +1078,262 @@ void RedirectionCommand::execute() {
 ///
 /// special commands end
 ///
+
+
+
+
+
+
+
+
+///
+/// timeout section start
+///
+
+
+///
+/// timeout command
+///
+
+TimeoutCommand::TimeoutCommand(const char *cmd_line, bool isBackground_flag) : Command(cmd_line) {
+    this->background = isBackground_flag;
+    this->external = true;
+}
+
+void TimeoutCommand::execute() {
+    vector<string> params_to_timeout_command = splitStringToWords(this->commandLine);
+//    this->params = params_to_timeout_command;
+    if (this->params.empty() || this->params.size() < 2) { // todo: check where this.params gets values
+        smashError("invalid arguments");
+        return;
+    }
+    int duration = 0;
+    if (checkIfInt(this->params[0]) == 0) {
+        smashError("invalid arguments");
+        return;
+    }
+    else {
+        duration = std::atoi(this->params[0].c_str());
+        if (duration < 0) {
+            smashError("invalid arguments");
+            return;
+        }
+    }
+
+    string command_after_duration = "";
+    unsigned int length = this->params.size();
+    for (unsigned int i = 1; i < length; ++i) {
+        if (!command_after_duration.empty()) {
+
+            command_after_duration.append(" " + this->params[i]);
+        }
+        else {
+            command_after_duration.append(this->params[i]);
+        }
+    }
+
+    int pid = fork();
+    if (pid == -1) {
+        smashError("fork failed");
+        return;
+    }
+    else if (pid == 0) {
+        setpgrp();
+        char params_to_time_cmd[200] = {0};
+        strcpy(params_to_time_cmd, command_after_duration.c_str());
+        _trim(params_to_time_cmd);
+        _removeBackgroundSign(params_to_time_cmd);
+
+        char* first_param = (char *) "/bin/bash";
+        char* second_param = (char *) "-c";
+        char *const params_to_exec[] = {first_param, second_param, params_to_time_cmd, nullptr};
+        int answer = execv("/bin/bash", params_to_exec);
+
+        if (answer == -1) {
+            smashError("execv failed");
+            return;
+        }
+    }
+    else {
+        JobsList* jobs_list = smash.get_ptr_to_jobslist();
+        jobs_list->removeFinishedJobs();
+        int new_job_id = jobs_list->addJob(pid, this, false);
+        int command_length = strlen(this->commandLine) + 1;
+        char *command_line = (char *) malloc(command_length);
+
+
+        strcpy(command_line, this->commandLine);
+        TimeList* time_list = smash.get_ptr_to_Timelist();
+        int new_time_id = time_list->addTime(new_job_id, pid, duration, command_line);
+        time_t time_now = time(nullptr);
+        time_list->What_is_the_Next_Timeout(time_now);
+
+        if (!(this->if_is_background())) {
+            smash.set_fg_process(pid);
+            waitpid(pid, nullptr, WUNTRACED);
+            JobsList jl = smash.getJobsList();
+            if (!jl.get_map().find(new_job_id)->second.if_is_stopped()) {
+                jobs_list->removeJobById(new_job_id);
+                time_list->removeTimeById(new_time_id);
+            }
+            jobs_list->change_last_stopped_job_id();
+            smash.set_fg_process(0);
+        }
+    }
+}
+
+
+/////timeList section
+
+
+int TimeList::getMaxId() {
+    return this->maxTimeId;
+}
+
+
+void TimeList::setMaxTimeId(int max_time_entry_id) {
+    this->maxTimeId = max_time_entry_id;
+}
+
+
+int TimeList::addTime(int job_id, int pid, int timeOfDur, char *command) {
+    int new_time_id = getMaxId();
+    new_time_id += 1;
+
+    TimeEntry newTimeEntery(new_time_id, job_id, pid, timeOfDur, command);
+    this->timeMap.insert(std::pair<int, TimeEntry>(new_time_id, newTimeEntery));
+
+    setMaxTimeId(new_time_id);
+    return new_time_id;
+}
+
+
+void TimeList::removeTimeById(int time_entry_id) {
+    this->timeMap.erase(time_entry_id);
+
+    int max_time_id = getMaxKeyInMap();
+
+    setMaxTimeId(max_time_id);
+}
+//int TimeList::get_TimeId_Of_finished_Timeout(time_t now) {
+//
+//    for (auto &pair: this->timeMap) {
+//        int until_finish = pair.second.getTimeOfDur() - difftime(now, pair.second.getTimeOfCommandCame());
+//        if (until_finish <= 0) {
+//            return pair.first;
+//        }
+//    }
+//    return -1;
+//}
+//
+//int TimeList::get_JobId_Of_finished_timeout(time_t now) {
+//
+//    for (auto &pair: this->timeMap) {
+//        int until_finished = pair.second.getTimeOfDur() - difftime(now, pair.second.getTimeOfCommandCame());
+//        if (until_finished <= 0) {
+//            return pair.second.getJobId();
+//        }
+//    }
+//    return -1;
+//}
+//
+int TimeList::getMaxKeyInMap() {
+
+    if (this->timeMap.size() == 0) {
+        return 0;
+    }
+    int max_Time_ID = 0;
+
+    for (const auto &pair : this->timeMap) {
+        if (pair.first > max_Time_ID) {
+            max_Time_ID = pair.first;
+        }
+    }
+    return max_Time_ID;
+}
+//
+//void TimeList::change_Max_TimeId() {
+//    if (this->timeMap.size() == 0) {
+//        this->maxTimeId = 0;
+//    }
+//
+//    int max_time_Id = 0;
+//
+//    for (auto pair : this->timeMap) {
+//        if (pair.first > max_time_Id) {
+//            max_time_Id = pair.first;
+//        }
+//    }
+//    this->maxTimeId = max_time_Id;
+//}
+void TimeList::What_is_the_Next_Timeout(time_t time_now) {
+
+    if (this->timeMap.empty()) {
+        return;
+    }
+    int next_timeout_cmd = -1;
+
+    for (auto &pair : this->timeMap) {
+        int diff = pair.second.getTimeOfDur() - difftime(time_now, pair.second.getTimeOfCommandCame());
+        if (diff < next_timeout_cmd || next_timeout_cmd == -1) {
+            next_timeout_cmd = diff;
+        }
+    }
+    alarm(next_timeout_cmd);
+}
+//
+//const map<int, TimeList::TimeEntry> &TimeList::getTimeMap() const {
+//    return this->timeMap;
+//}
+
+
+
+/////timeEntry section
+
+TimeList::TimeEntry::TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command) : id(id), job_id(job_id),pid(pid),timeOfDur(timeOfDur),command(command) {
+    this->timeOfCommandCame = time(nullptr);
+    if (this->timeOfCommandCame == -1) {
+        smashError("time failed");
+    }
+}
+//int TimeList::TimeEntry::getJobId() const {
+//    return this->job_id;
+//}
+//
+//int TimeList::TimeEntry::getPid() const {
+//    return this->pid;
+//}
+
+
+int TimeList::TimeEntry::getTimeOfDur() const {
+    return this->timeOfDur;
+}
+
+
+//char *TimeList::TimeEntry::getCommand() const {
+//    return this->command;
+//}
+
+
+time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
+    return this->timeOfCommandCame;
+}
+
+
+
+
+
+
+
+
+
+
+
+///
+/// timeout section end
+///
+
+
 
 
 
@@ -1137,7 +1408,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         return new BackgroundCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
     else if (isStringCommand(command_line, "quit")) {
-        printf("asd");
+        return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
+    }
+
+    else if (isStringCommand(command_line, "pipe")) {
         return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
     return nullptr;
@@ -1208,4 +1482,8 @@ void SmallShell::bringJobToForeGround(JobsList::JobEntry& jobEntry){
 void SmallShell::sendJobToBackground(JobsList::JobEntry& jobEntry) {
     jobEntry.setStopped(false);
 //            this->jobs_list->change_last_stopped_job_id(); todo
+}
+
+TimeList *SmallShell::get_ptr_to_Timelist() {
+    return &(this->times);
 }
