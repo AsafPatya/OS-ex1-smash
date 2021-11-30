@@ -26,7 +26,11 @@ void ctrlZHandler(int sig_num) {
     if (fgprocess != 0) {
         auto jobs = smash.get_ptr_to_jobslist();
         int jobID = jobs->get_job_id_by_pid(fgprocess);
-        jobs->get_map().find(jobID)->second.setStopped(true);
+        auto je = jobs->get_map().find(jobID);
+//        if(je == jobs->get_map().end()){
+//            JobsList::addJob();
+//        }
+        je->second.setStopped(true);
         if (kill(fgprocess, SIGSTOP) == -1) {
 //            smashError("kill failed", true);
             perror("smash error: kill failed");
