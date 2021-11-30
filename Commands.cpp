@@ -1092,7 +1092,79 @@ void RedirectionCommand::execute() {
 ///
 
 
+///
+/// \param fd
+/// \param index
+/// \return -1 on error
+/// \return 0 on eof
+/// \return the index of the next line
+int readNextLine(int fd, string& str){
+    char buffer;
+    str = "";
+    do {
+        int readResult = read(fd, &buffer, 1);
+        if (readResult == -1 || readResult == 0){
+            return readResult;
+        }
+        str += buffer;
+    } while (buffer != '\n');
+//    cout << str;//todo: change cout to the relevant pipe
+    return 1;
+}
 
+///
+/// #HeadCommand
+/// \param cmd_line
+HeadCommand::HeadCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+void HeadCommand::execute() {
+
+    ///setting the parameters
+
+    int paramsSize = this->params.size();
+    if (paramsSize == 0){
+        smashError("head: not enough arguments");
+        return;
+    }
+    if (paramsSize > 2){
+        smashError("head: too many arguments"); // todo: ask about this message
+        return;
+    }
+    int n = 10;
+    string file = _trim(this->params[0]);
+    if (paramsSize == 2){
+        if(!checkIfInt(params[0])){
+            smashError("head: invalid arguments");
+            return;
+        }
+        n = abs(stoi(params[0]));
+        file = _trim(this->params[1]);
+    }
+
+    ///execute the command
+
+    int fd = open(file.c_str(), O_RDONLY);
+    if (fd == -1) {
+        smashError("open failed", true);
+        return;
+    }
+    int currentLine = 0;
+    do {
+        string str = "";
+        int printingResult = readNextLine(fd, str);
+        if (printingResult < 0){
+            smashError("print failed", true);
+            close(fd);
+            return;
+        }
+        if (printingResult == 0){ ///end of file
+            close(fd);
+            return;
+        }
+        cout << str;//todo: change the cout to the relevant pipe
+        currentLine++;
+    } while (currentLine < n);
+    close(fd);
+}
 
 
 
@@ -1367,8 +1439,9 @@ time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
 
 // TODO: Add your implementation for classes in Commands.h
 
-SmallShell::SmallShell() {
-// TODO: add your implementation
+SmallShell::SmallShell():jobs(JobsList()) {
+    this->pid = getpid();
+    this->fgprocess=0;
 }
 
 SmallShell::~SmallShell() {
@@ -1427,6 +1500,9 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     }
     else if (isStringCommand(command_line, "quit")) {
         return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
+    }
+    else if (isStringCommand(command_line, "head")) {
+        return new HeadCommand(cmd_line);
     }
     else if (isStringCommand(command_line, "timeout")) {
         return new TimeoutCommand(cmd_line,smash.get_ptr_to_jobslist());
