@@ -566,9 +566,9 @@ void ForegroundCommand::execute() {
     waitpid(pid, nullptr, WUNTRACED);
 //
 //    todo: implement. do we need the if statement?
-//    if (!map.find(job_id)->second.if_is_stopped()) {
-    this->jobs_list->removeJobById(job_id);
-//    }
+    if (!map.find(job_id)->second.if_is_stopped()) {
+        this->jobs_list->removeJobById(job_id);
+    }
 //
     this->jobs_list->change_last_stopped_job_id();
 
@@ -592,8 +592,8 @@ void BackgroundCommand::execute() {
     ///getting the jobId
 
     if(this->params.size() == 0){
-//        job_id = this->jobs_list->get_max_from_stopped_jobs_id();//todo get the jobId
-        if (job_id == 0) {//todo
+        job_id = this->jobs_list->return_max_job_id_in_Map();//todo get the jobId
+        if (job_id == 0) {
             smashError("bg: there is no stopped jobs to resume");
             return;
         }
