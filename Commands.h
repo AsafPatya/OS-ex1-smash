@@ -99,14 +99,10 @@ public:
         time_t timeOfCommandCame;
     public:
         TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command);
-//
-//        int getJobId() const;
-//
-//        int getPid() const;
+        int getJobId() const;
+        int getPid() const;
         int getTimeOfDur() const;
-//
-//        char *getCommand() const;
-//
+        char *getCommand() const;
         time_t getTimeOfCommandCame() const;
 //
         ~TimeEntry() {};
@@ -123,12 +119,12 @@ public:
     void setMaxTimeId(int maxTimeEntryId);
     int addTime(int job_id, int pid, int timeOfDur, char *command);
     void removeTimeById(int time_entry_Id);
-//    int get_TimeId_Of_finished_Timeout(time_t now);
+    int get_TimeId_Of_finished_Timeout(time_t time_now);
 //    int get_JobId_Of_finished_timeout(time_t now);
-//    void change_Max_TimeId();
+    void change_Max_TimeId();
     void What_is_the_Next_Timeout(time_t now);
-//    const std::map<int, TimeEntry> &getTimeMap() const;
-//
+    const std::map<int, TimeEntry> &getTimeMap() const;
+
     ~TimeList() {};
 
 };
