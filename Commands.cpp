@@ -1047,13 +1047,13 @@ void RedirectionCommand::execute() {
     int ans_dup = dup(1);
 
     if (ans_dup == -1) {
-        smashError("dup failed");
+        smashError("dup failed", true);
         delete command;
         return;
     }
 
     if (close(1) == -1) {
-        smashError("close failed");
+        smashError("close failed", true);
         delete command;
         return;
     }
@@ -1067,7 +1067,7 @@ void RedirectionCommand::execute() {
         ans = open(file_name.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0666);
     }
     if (ans == -1) {
-        smashError("open failed");
+        smashError("open failed", true);
         dup2(ans_dup, 1);
         delete command;
         return;
@@ -1075,18 +1075,18 @@ void RedirectionCommand::execute() {
 
     smash.executeCommand(command->getCommandLine());
     if (close(1) == -1) {
-        smashError("close failed");
+        smashError("close failed", true);
         dup2(ans_dup, 1);
         delete command;
         return;
     }
 
     if (dup(ans_dup) == -1) {
-        smashError("dup failed");
+        smashError("dup failed", true);
     }
 
     if (close(ans_dup) == -1) {
-        smashError("close failed");
+        smashError("close failed", true);
     }
     delete command;
 }
