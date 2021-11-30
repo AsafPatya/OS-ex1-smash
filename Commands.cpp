@@ -651,7 +651,7 @@ void QuitCommand::execute() {
             string command = job.second.getCommand();
             cout << pid << ": " << command << endl;
             if (kill(pid, SIGKILL) == -1) {
-                smashError("kill failed");
+                smashError("kill failed", true);
             }
         }
     }
@@ -917,7 +917,7 @@ void PipeCommand::execute() {
     int mypipe[2];
 
     if (pipe(mypipe) == -1) {
-        smashError("pipe failed");
+        smashError("pipe failed", true);
         return;
     }
 
@@ -938,21 +938,21 @@ void PipeCommand::execute() {
     int pid1 = fork();
     int pid2;
     if (pid1 == -1) {
-        smashError("fork failed" );
+        smashError("fork failed", true);
         return;
     }
     if (pid1 == 0) {
         setpgrp();
         if (dup2(mypipe[1], channel) == -1) {
-            smashError("dup2 failed");
+            smashError("dup2 failed", true);
             return;
         }
         if (close(mypipe[0]) == -1) {
-            smashError("close failed");
+            smashError("close failed", true);
             return;
         }
         if (close(mypipe[1]) == -1) {
-            smashError("close failed");
+            smashError("close failed", true);
             return;
         }
         smash.executeCommand(params_of_pipe[0].c_str());
@@ -962,20 +962,20 @@ void PipeCommand::execute() {
         pid2 = fork();
         //setrpgp
         if (pid2 == -1) {
-            smashError("fork failed");
+            smashError("fork failed", true);
             return;
         }
         if (pid2 == 0) {
             if (dup2(mypipe[0], 0) == -1) {
-                smashError("dup2 failed");
+                smashError("dup2 failed", true);
                 return;
             }
             if (close(mypipe[0]) == -1) {
-                smashError("close failed");
+                smashError("close failed", true);
                 return;
             }
             if (close(mypipe[1]) == -1) {
-                smashError("close failed");
+                smashError("close failed", true);
                 return;
             }
             smash.executeCommand(params_of_pipe[1].c_str());
@@ -985,11 +985,11 @@ void PipeCommand::execute() {
     }
 
     if (close(mypipe[0]) == -1) {
-        smashError("close failed");
+        smashError("close failed", true);
         return;
     }
     if (close(mypipe[1]) == -1) {
-        smashError("close failed");
+        smashError("close failed", true);
         return;
     }
 //    if (dup2(sec_place_of_channel, channel) == -1) {
@@ -1193,19 +1193,22 @@ TimeoutCommand::TimeoutCommand(const char *cmd_line, bool isBackground_flag) : C
 void TimeoutCommand::execute() {
     vector<string> params_to_timeout_command = splitStringToWords(this->commandLine);
 //    this->params = params_to_timeout_command;
-    if (this->params.empty() || this->params.size() < 2) { // todo: check where this.params gets values
-        smashError("invalid arguments", true);
+    if (this->params.empty() || this->params.size() < 2) {
+//        smashError("invalid arguments");
+        cerr << "smash error: timeout: invalid arguments" << std::endl;
         return;
     }
     int duration = 0;
     if (checkIfInt(this->params[0]) == 0) {
-        smashError("invalid arguments", true);
+//        smashError("invalid arguments");
+        cerr << "smash error: timeout: invalid arguments" << endl;
         return;
     }
     else {
         duration = std::atoi(this->params[0].c_str());
         if (duration < 0) {
-            smashError("invalid arguments", true);
+//            smashError("invalid arguments");
+            cerr << "smash error: timeout: invalid arguments" << endl;
             return;
         }
     }
