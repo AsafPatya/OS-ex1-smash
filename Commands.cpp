@@ -398,15 +398,18 @@ void ChangeDirCommand::execute() {
     string curr_dir = "";
 
     if (this->params.size() > 1) {
-        cerr<<"smash error: cd: too many arguments"<<endl;
+        smashError("cd: too many arguments");
+//        cerr<<"smash error: cd: too many arguments"<<endl;
         return;
     }
     else if(this->params.size()==0){ //Todo: ask about zero arguments
-        cerr << "smash error: cd: zero arguments" << endl;
+        smashError("cd: zero arguments");
+//        cerr << "smash error: cd: zero arguments" << endl;
     }
     else if (this->params[0] == "-") {
         if (last_dir == "") {
-            cerr<<"smash error: cd: OLDPWD not set"<<endl;
+            smashError("cd: OLDPWD not set");
+//            cerr<<"smash error: cd: OLDPWD not set"<<endl;
             return;
         }
         last_dir = smash.getCurrDir();
@@ -414,7 +417,8 @@ void ChangeDirCommand::execute() {
 
         int result = chdir(curr_dir.c_str());//curr_dir.c_str()
         if (result == -1) {
-            perror("smash error: chdir failed");
+            smashError("chdir failed", true);
+//            perror("smash error: chdir failed");
             return;
         }
 
@@ -428,7 +432,8 @@ void ChangeDirCommand::execute() {
     else {
         char *currDirCommand = get_current_dir_name();
         if (currDirCommand == nullptr) {
-            perror("ERROR : get_current_dir_name failed");
+            smashError("get_current_dir_name failed", true);
+//            perror("ERROR : get_current_dir_name failed");
             return ;
         }
 
@@ -438,7 +443,8 @@ void ChangeDirCommand::execute() {
         ///todo: check about (last_dir == curr_dir)
         int ans = chdir(this->params[0].c_str());
         if (ans == -1) {
-            perror("smash error: chdir failed");
+            smashError("chdir failed", true);
+//            perror("smash error: chdir failed");
             return;
         }
         curr_dir = this->params[0];
@@ -558,6 +564,7 @@ void ForegroundCommand::execute() {
         return;
     }
     waitpid(pid, nullptr, WUNTRACED);
+//
 //    todo: implement. do we need the if statement?
 //    if (!map.find(job_id)->second.if_is_stopped()) {
     this->jobs_list->removeJobById(job_id);
@@ -1108,7 +1115,6 @@ int readNextLine(int fd, string& str){
         }
         str += buffer;
     } while (buffer != '\n');
-//    cout << str;//todo: change cout to the relevant pipe
     return 1;
 }
 
@@ -1523,8 +1529,8 @@ void SmallShell::executeCommand(const char *cmd_line) {
         if (command->isExternal()) {
             command->execute();
         } else {
-        command->execute();
-        delete command;
+            command->execute();
+            delete command;
         }
     }
 }
