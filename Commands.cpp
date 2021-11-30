@@ -549,13 +549,7 @@ void ForegroundCommand::execute() {
 
     this->jobs_list->removeFinishedJobs();
     JobsList::JobEntry currentJob = map.find(job_id)->second;
-
     int pid = currentJob.getPid();
-//    string command = currentJob.getCommand();
-//
-//    currentJob.setBackground(false);
-//    smash.set_fg_process(pid_of_job);
-
     cout << currentJob.toString() << endl;
     smash.bringJobToForeGround(currentJob);
 
@@ -563,14 +557,13 @@ void ForegroundCommand::execute() {
         smashError("kill failed", true);
         return;
     }
-//    map.find(job_id)->second.setStopped(false);
     waitpid(pid, nullptr, WUNTRACED);
 //    todo: implement. do we need the if statement?
 //    if (!map.find(job_id)->second.if_is_stopped()) {
     this->jobs_list->removeJobById(job_id);
 //    }
 //
-//    this->jobs_list->change_last_stopped_job_id();
+    this->jobs_list->change_last_stopped_job_id();
 
     smash.set_fg_process(0);
 }
@@ -610,24 +603,24 @@ void BackgroundCommand::execute() {
         }
     }
 
-    ///start the command
+    ///execute the command
 
     JobsList::JobEntry jobEntry = map.find(job_id)->second;
 
     if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
-        smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
+        smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"), true);
         return;
     }
     int pid_of_job = jobEntry.getPid();
     cout << jobEntry.toString() << endl;
     if (jobEntry.if_is_background() && jobEntry.if_is_stopped()) {
         if (killpg(pid_of_job, SIGCONT) == -1) { // syscall failed
-            smashError(" kill failed");
+            smashError(" kill failed", true);
             return;
         }
     } else{
         if (kill(pid_of_job, SIGCONT) == -1) {
-            smashError(" kill failed");
+            smashError(" kill failed", true);
             return;
         }
     }
@@ -748,20 +741,15 @@ const map<int, JobsList::JobEntry> &JobsList::get_map() const {
 }
 
 int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
+    this->removeFinishedJobs();//todo: check with asaf
     if (jobId == -1){
-        jobId = 0;
-        for (auto jobEntry : this->get_map()) {
-            int currentJobId = jobEntry.second.getJobId();
-            if (currentJobId > jobId)
-                jobId = currentJobId;
-        }
-
-//        jobId = max todo
-//        set new max todo
+        jobId = return_max_job_id_in_Map();
     }
     jobId++;
     JobEntry new_job(jobId, pid, cmd);
     this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(jobId, new_job));
+    if (jobId > return_max_job_id_in_Map())
+        set_max_from_jobs_id(jobId);
     return jobId;
 }
 
@@ -884,7 +872,7 @@ void ExternalCommand::execute() {
                 jobs->removeJobById(new_job_id);
             }
 
-//            jobs->change_last_stopped_job_id();todo
+            jobs->change_last_stopped_job_id();
             smash.set_fg_process(0);
         }
     }
@@ -1444,6 +1432,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 }
 
 void SmallShell::executeCommand(const char *cmd_line) {
+    this->jobs.removeFinishedJobs();//todo: check with asaf
     Command *command = CreateCommand(cmd_line);
     if (command) {
         if (command->isExternal()) {
@@ -1507,7 +1496,7 @@ void SmallShell::bringJobToForeGround(JobsList::JobEntry& jobEntry){
 
 void SmallShell::sendJobToBackground(JobsList::JobEntry& jobEntry) {
     jobEntry.setStopped(false);
-//            this->jobs_list->change_last_stopped_job_id(); todo
+    this->jobs.change_last_stopped_job_id();
 }
 
 TimeList *SmallShell::get_ptr_to_Timelist() {
