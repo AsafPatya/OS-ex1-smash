@@ -16,11 +16,20 @@ int main(int argc, char* argv[]) {
     }
 
     //TODO: setup sig alarm handler
+    struct sigaction action;
+    action.sa_handler = alarmHandler;
+    action.sa_flags = SA_RESTART;
+
+    int res = sigaction(SIGALRM, &action, 0);
+    if (res == -1) {
+        perror("smash error: failed to set alarm handler");
+    }
 
     while(!smash.isquit) {
         std::cout << smash.getPrompt();
         std::string cmd_line;
         std::getline(std::cin, cmd_line);
+        smash.get_ptr_to_jobslist()->removeFinishedJobs();
         smash.executeCommand(cmd_line.c_str());
     }
     return 0;
