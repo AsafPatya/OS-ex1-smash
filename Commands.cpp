@@ -615,7 +615,8 @@ void BackgroundCommand::execute() {
     JobsList::JobEntry jobEntry = map.find(job_id)->second;
 
     if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
-        smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"), true);
+        // todo: why true?
+        smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
         return;
     }
     int pid_of_job = jobEntry.getPid();
