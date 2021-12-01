@@ -1164,6 +1164,7 @@ void HeadCommand::execute() {
             return;
         }
         if (printingResult == 0){ ///end of file
+            cout << str;//todo: change the cout to the relevant pipe
             close(fd);
             return;
         }
