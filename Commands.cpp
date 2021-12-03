@@ -301,50 +301,24 @@ bool is_err(const string &str)
 /// smash helper functions
 ///
 
-bool check_if_equal(string command, string s)
-{
+bool xxx(string s, string command){ //todo: change the name
     //todo: remove spaces from the start of the command
-//    command.erase( remove( command.begin(), command.end(), ' ' ), command.end() );
     if (s.length() < command.length())
-    {
         return false;
-    }
-    // command = chprompt
-    // s =       chprompt1
-    for (unsigned int i = 0; i < command.length(); ++i)
-    {
+    for (unsigned int i = 0; i < command.length(); ++i) {
         if (command.at(i) != s.at(i))
             return false;
     }
-
-    if (command.length() == s.length())
-    {
-        return true;
-    }
-    else
-    {
-        char c = s[command.length()];
-        if (c != ' ')
-        {
-            return false;
-        }
-    }
-
     //todo: make sure the command ends with space
     return true;
 }
 
-bool isStringCommand(string s, string command)
-{
-    return check_if_equal(command, s);
-
-//    bool b = xxx(command, s);
-//    return b;
-
+bool isStringCommand(string s, string command){
 //    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
+    bool b = xxx(s, command);
 //    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
-//    return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
-
+    return b;
+    //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
 }
 
 void smashError(string errMsg, bool isKernelError = false){
