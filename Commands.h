@@ -12,8 +12,8 @@
 using std::vector;
 using std::string;
 
+
 class Command {
-// TODO: Add your data members
 protected:
     char *commandLine;
     vector<string> params;
@@ -22,22 +22,22 @@ protected:
     bool background = false;
     bool foreground= false;
 
- public:
+public:
   Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
-  //virtual void prepare();
-  //virtual void cleanup();
-  // TODO: Add your extra methods if needed
   bool if_is_stopped() const;
-    void setStopped(bool stopped);
-    bool if_is_background() const;
-    void setBackground(bool background);
-    bool isExternal() const;
-    const char *getCommandLine() const;
+  void setStopped(bool stopped);
+  bool if_is_background() const;
+  void setBackground(bool background);
+  bool isExternal() const;
+  const char *getCommandLine() const;
+//    virtual void prepare();
+//    virtual void cleanup();
 //    const vector<string> &getParams() const;
 //    const string &getStartCommand() const;
 };
+
 
 class BuiltInCommand : public Command {
  public:

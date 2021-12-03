@@ -89,12 +89,13 @@ void _removeBackgroundSign(char* cmd_line) {
 
 ///new functions
 
-static vector<string> splitStringToWords(const string &str) {
-    vector<string> wordsvec;
+static vector<string> splitStringToWords(const string &str)
+{
+    vector<string> words_vector;
     string word = "";
-    for(unsigned int i=0;i<str.length();i++){
+    for(unsigned int i = 0; i < str.length(); i++){
         if (str.at(i) == ' ' && word != "") {
-            wordsvec.push_back(word);
+            words_vector.push_back(word);
             word = "";
         }
         else {
@@ -102,73 +103,95 @@ static vector<string> splitStringToWords(const string &str) {
         }
     }
     if (word != "") {
-        wordsvec.push_back(word);
+        words_vector.push_back(word);
     }
-    return wordsvec;
+    return words_vector;
 }
 
-bool checkIfInt(const string &str) {
-    if (str.empty() || ( (!isdigit(str[0]))&&(str[0] != '-') && (str[0] != '+'))) return false;
-    for(unsigned int i=1;i<str.length();i++){
-        if(isdigit(str[i])==0){
+bool checkIfInt(const string &str)
+{
+    if (str.empty() || ( (!isdigit(str[0])) && (str[0] != '-') && (str[0] != '+')) )
+    {
+        return false;
+    }
+    for(unsigned int i = 1; i < str.length(); i++)
+    {
+        if(!isdigit(str[i]))
+        {
             return false;
         }
     }
     return true;
 }
 
-vector<string> get_param_of_pipe(const string &str) {
+vector<string> get_param_of_pipe(const string &str)
+{
 
     vector<string> result = {"", ""};
     bool is_second_arg = false;
 
-    for(auto ch : str){
-        if (ch != '|') {
-            if (is_second_arg == false) {
+    for(auto ch : str)
+    {
+        if (ch != '|')
+        {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
+            }
+            else
+            {
                 if (result[1].size() == 0 && ch== ' ') {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             int last_index = result[0].length()-1;
-            if (result[0][last_index] == ' ') {
+            if (result[0][last_index] == ' ')
+            {
                 result[0].erase(last_index, 1);
             }
         }
     }
-
     return result;
 }
 
 
-vector<string> get_param_of_pipe_with_arr(const string &str) {
+vector<string> get_param_of_pipe_with_arr(const string &str)
+{
 
     vector<string> result = {"", ""};
     bool is_second_arg = false;
     bool found_first= false;
 
 
-    for(auto ch:str){
-        if(found_first==true){
+    for(auto ch:str)
+    {
+        if(found_first)
+        {
             found_first=false;
             continue;
         }
-        else if (ch != '|') {
-            if (is_second_arg == false) {
+        else if (ch != '|')
+        {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
-                if (result[1].size() == 0 && ch == ' ') {
+            }
+            else
+            {
+                if (result[1].size() == 0 && ch == ' ')
+                {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             found_first= true;
             int last_index = result[0].length()-1;
@@ -182,53 +205,69 @@ vector<string> get_param_of_pipe_with_arr(const string &str) {
 }
 
 
-vector<string> get_param_case_override(const string &str) {
+vector<string> get_param_case_override(const string &str)
+{
 
     vector<string> result = {"", ""};
     bool is_second_arg = false;
 
-    for(auto ch:str){
-        if (ch != '>') {
-            if (is_second_arg == false) {
+    for(auto ch:str)
+    {
+        if (ch != '>')
+        {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
-                if (result[1].size() == 0 && ch == ' ') {
+            }
+            else
+            {
+                if (result[1].size() == 0 && ch == ' ')
+                {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             int last_index=result[0].length()-1;
-            if (result[0][last_index] == ' ') {
+            if (result[0][last_index] == ' ')
+            {
                 result[0].erase(last_index, 1);
             }
         }
     }
     return result;
 }
-vector<string> get_param_case_append(const string &str) {
+vector<string> get_param_case_append(const string &str)
+{
 
     vector<string> result = {"", ""};
     bool is_second_arg = false;
     bool found_first= false;
     for(auto ch:str){
-        if(found_first== true){
+        if(found_first)
+        {
             found_first= false;
             continue;
         }
         else if (ch != '>') {
-            if (is_second_arg == false) {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
-                if (result[1].size() == 0 && ch == ' ') {
+            }
+            else
+            {
+                if (result[1].size() == 0 && ch == ' ')
+                {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             found_first= true;
             int last_index=result[0].length()-1;
@@ -240,17 +279,21 @@ vector<string> get_param_case_append(const string &str) {
     return result;
 }
 
-bool is_ovveride(const string &str) {
+bool is_ovveride(const string &str)
+{
     return (str.find(">") != str.npos);
 }
 
-bool is_append(const string &str) {
+bool is_append(const string &str)
+{
     return (str.find(">>") != str.npos);
 }
-bool is_out(const string &str) {
+bool is_out(const string &str)
+{
     return (str.find("|") != str.npos);
 }
-bool is_err(const string &str) {
+bool is_err(const string &str)
+{
     return (str.find("|&") != str.npos);
 }
 
@@ -258,24 +301,50 @@ bool is_err(const string &str) {
 /// smash helper functions
 ///
 
-bool xxx(string command, string s){ //todo: change the name
+bool check_if_equal(string command, string s)
+{
     //todo: remove spaces from the start of the command
+//    command.erase( remove( command.begin(), command.end(), ' ' ), command.end() );
     if (s.length() < command.length())
+    {
         return false;
-    for (unsigned int i = 0; i < command.length(); ++i) {
+    }
+    // command = chprompt
+    // s =       chprompt1
+    for (unsigned int i = 0; i < command.length(); ++i)
+    {
         if (command.at(i) != s.at(i))
             return false;
     }
+
+    if (command.length() == s.length())
+    {
+        return true;
+    }
+    else
+    {
+        char c = s[command.length()];
+        if (c != ' ')
+        {
+            return false;
+        }
+    }
+
     //todo: make sure the command ends with space
     return true;
 }
 
-bool isStringCommand(string s, string command){
+bool isStringCommand(string s, string command)
+{
+    return check_if_equal(command, s);
+
+//    bool b = xxx(command, s);
+//    return b;
+
 //    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
-    bool b = xxx(command, s);
 //    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
-    return b;
-    //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
+//    return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
+
 }
 
 void smashError(string errMsg, bool isKernelError = false){
