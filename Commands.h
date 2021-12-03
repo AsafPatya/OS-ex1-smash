@@ -225,7 +225,7 @@ public:
 //   int addJob(int pid, Command *cmd, bool stopped = false);
 //   int get_max_from_jobs_id() const;
    void set_max_from_jobs_id(int max_job_id);
-//   int get_max_from_stopped_jobs_id() const;
+   int get_max_from_stopped_jobs_id() const;
 //   void set_max_from_stopped_jobs_id(int max_stopped_job_id);
    int return_max_job_id_in_Map();
    int get_job_id_by_pid(int pid);

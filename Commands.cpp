@@ -592,7 +592,7 @@ void BackgroundCommand::execute() {
     ///getting the jobId
 
     if(this->params.size() == 0){
-        job_id = this->jobs_list->return_max_job_id_in_Map();//todo get the jobId
+        job_id = this->jobs_list->get_max_from_stopped_jobs_id();//todo get the jobId
         if (job_id == 0) {
             smashError("bg: there is no stopped jobs to resume");
             return;
@@ -613,9 +613,7 @@ void BackgroundCommand::execute() {
     ///execute the command
 
     JobsList::JobEntry jobEntry = map.find(job_id)->second;
-
     if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
-        // todo: why true?
         smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
         return;
     }
@@ -626,6 +624,7 @@ void BackgroundCommand::execute() {
             smashError(" kill failed", true);
             return;
         }
+        smash.sendJobToBackground(jobEntry);
     } else{
         if (kill(pid_of_job, SIGCONT) == -1) {
             smashError(" kill failed", true);
@@ -726,6 +725,10 @@ int JobsList::return_max_job_id_in_Map() {
 
 void JobsList::set_max_from_jobs_id(int max_job_id) {
     this->max_from_jobs_id = max_job_id;
+}
+
+int JobsList::get_max_from_stopped_jobs_id() const {
+    return this->max_from_stopped_jobs_id;
 }
 
 int JobsList::get_job_id_by_pid(int pid) {
@@ -1196,21 +1199,21 @@ void TimeoutCommand::execute() {
     vector<string> params_to_timeout_command = splitStringToWords(this->commandLine);
 //    this->params = params_to_timeout_command;
     if (this->params.empty() || this->params.size() < 2) {
-//        smashError("invalid arguments");
-        cerr << "smash error: timeout: invalid arguments" << std::endl;
+        smashError("timeout: invalid arguments");
+//        cerr << "smash error: timeout: invalid arguments" << std::endl;
         return;
     }
     int duration = 0;
     if (checkIfInt(this->params[0]) == 0) {
-//        smashError("invalid arguments");
-        cerr << "smash error: timeout: invalid arguments" << endl;
+        smashError("timeout: invalid arguments");
+//        cerr << "smash error: timeout: invalid arguments" << endl;
         return;
     }
     else {
         duration = std::atoi(this->params[0].c_str());
         if (duration < 0) {
-//            smashError("invalid arguments");
-            cerr << "smash error: timeout: invalid arguments" << endl;
+            smashError("timeout: invalid arguments");
+//            cerr << "smash error: timeout: invalid arguments" << endl;
             return;
         }
     }
@@ -1219,7 +1222,6 @@ void TimeoutCommand::execute() {
     unsigned int length = this->params.size();
     for (unsigned int i = 1; i < length; ++i) {
         if (!command_after_duration.empty()) {
-
             command_after_duration.append(" " + this->params[i]);
         }
         else {
@@ -1448,17 +1450,13 @@ time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
 /// #smash
 ///
 
-// TODO: Add your implementation for classes in Commands.h
-
 SmallShell::SmallShell():jobs(JobsList()) {
     this->pid = getpid();
     this->fgprocess=0;
 }
 
-SmallShell::~SmallShell() {
-// TODO: add your implementation
-}
-// asaf
+SmallShell::~SmallShell() {}
+
 Command * SmallShell::CreateCommand(const char* cmd_line) {
     string command_line = string(cmd_line);
 
@@ -1516,7 +1514,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         return new HeadCommand(cmd_line);
     }
     else if (isStringCommand(command_line, "timeout")) {
-        return new TimeoutCommand(cmd_line,smash.get_ptr_to_jobslist());
+        return new TimeoutCommand(cmd_line,background);
     }
     else {
         if (command_line.empty()) {
