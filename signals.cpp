@@ -27,15 +27,17 @@ void ctrlZHandler(int sig_num) {
         auto jobs = smash.get_ptr_to_jobslist();
         int jobID = jobs->get_job_id_by_pid(fgprocess);
         auto je = jobs->get_map().find(jobID);
+        auto job = je->second;
 //        if(je == jobs->get_map().end()){
 //            JobsList::addJob();
 //        }
-        je->second.setStopped(true);
         if (kill(fgprocess, SIGSTOP) == -1) {
 //            smashError("kill failed", true);
             perror("smash error: kill failed");
             return;
         }
+        job.setStopped(true);
+        job.setBackground(true);
         std::cout << "smash: process " << fgprocess << " was stopped" << std::endl;
     }
 }

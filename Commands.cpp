@@ -613,6 +613,9 @@ void BackgroundCommand::execute() {
     ///execute the command
 
     JobsList::JobEntry jobEntry = map.find(job_id)->second;
+//    cout << "job data:" << endl;
+//    cout << "jobEntry.if_is_background: " << jobEntry.if_is_background() << endl;
+//    cout << "jobEntry.if_is_stopped: " << jobEntry.if_is_stopped() << endl;
     if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
         smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
         return;
