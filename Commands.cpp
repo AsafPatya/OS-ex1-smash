@@ -692,7 +692,7 @@ void BackgroundCommand::execute()
     if(this->params.size() == 0)
     {
 //        job_id = this->jobs_list->get_max_from_stopped_jobs_id();
-        job_id = this->jobs_list->return_max_stopped_jobs_id();//todo get the jobId
+        job_id = this->jobs_list->return_max_stopped_jobs_id_in_map();//todo get the jobId
         if (job_id == 0)
         {
             smashError("bg: there is no stopped jobs to resume");
@@ -772,14 +772,11 @@ void QuitCommand::execute()
 
 
 ///
-/// #jobs section starts
+/// #JobsList
 ///
 
-///
-/// #JobsList start
-///
-
-void JobsList::printJobsList() {
+void JobsList::printJobsList()
+{
     for (auto &job_entry : this->map_of_smash_jobs)
     {
         time_t time_now = time(nullptr);
@@ -810,7 +807,8 @@ void JobsList::printJobsList() {
     }
 }
 
-void JobsList::removeFinishedJobs() {
+void JobsList::removeFinishedJobs()
+{
     int status;
     int child_pid_finished = waitpid(-1, &status, WNOHANG);
     while (child_pid_finished > 0)
@@ -824,7 +822,8 @@ void JobsList::removeFinishedJobs() {
     }
 }
 
-void JobsList::removeJobById(int job_id) {
+void JobsList::removeJobById(int job_id)
+{
     JobEntry job_entry = this->map_of_smash_jobs.find(job_id)->second;
     job_entry.deleteCommand();
     this->map_of_smash_jobs.erase(job_id);
@@ -832,7 +831,8 @@ void JobsList::removeJobById(int job_id) {
     set_max_from_jobs_id(maxJob);
 }
 
-int JobsList::return_max_job_id_in_Map() {
+int JobsList::return_max_job_id_in_Map()
+{
     if (this->map_of_smash_jobs.size() == 0)
     {
         return 0;
@@ -848,15 +848,18 @@ int JobsList::return_max_job_id_in_Map() {
     return max;
 }
 
-void JobsList::set_max_from_jobs_id(int max_job_id) {
+void JobsList::set_max_from_jobs_id(int max_job_id)
+{
     this->max_from_jobs_id = max_job_id;
 }
 
-int JobsList::get_max_from_stopped_jobs_id() const {
+int JobsList::get_max_from_stopped_jobs_id() const
+{
     return this->max_from_stopped_jobs_id;
 }
 
-int JobsList::return_max_stopped_jobs_id() {
+int JobsList::return_max_stopped_jobs_id_in_map()
+{
     if (this->map_of_smash_jobs.size() == 0)
     {
         return 0;
@@ -873,13 +876,14 @@ int JobsList::return_max_stopped_jobs_id() {
     return max;
 }
 
-int JobsList::get_job_id_by_pid(int pid) {
-//    map<int, JobsList::JobEntry> &map_of_smash_jobs = this->map_of_smash_jobs;
-    if (this->map_of_smash_jobs.size() == 0)
+int JobsList::get_job_id_by_pid(int pid)
+{
+    map <int, JobsList::JobEntry> map_of_smash_jobs = this->map_of_smash_jobs;
+    if (map_of_smash_jobs.size() == 0)
     {
         return 0;
     }
-    for (const auto &job : this->map_of_smash_jobs)
+    for (const auto &job : map_of_smash_jobs)
     {
         if (job.second.getPid() == pid)
         {
@@ -889,7 +893,8 @@ int JobsList::get_job_id_by_pid(int pid) {
     return 0;
 }
 
-int JobsList::JobEntry::getJobId() const {
+int JobsList::JobEntry::getJobId() const
+{
     return this->jobID;
 }
 
@@ -897,7 +902,8 @@ const map<int, JobsList::JobEntry> &JobsList::get_map() const {
     return this->map_of_smash_jobs;
 }
 
-int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
+int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId)
+{
     this->removeFinishedJobs();//todo: check with asaf
     if (jobId == -1){
         jobId = return_max_job_id_in_Map();
@@ -910,95 +916,114 @@ int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
     return jobId;
 }
 
-void JobsList::change_last_stopped_job_id() {
-    ///checkvalgrind
-    JobsList job_list = smash.getJobsList();
-    map<int, JobsList::JobEntry> map_of_smash_jobs = job_list.get_map();
+void JobsList::change_last_stopped_job_id()
+{
+    JobsList* job_list = smash.get_ptr_to_jobslist();
+    map <int, JobsList::JobEntry> map_of_smash_jobs = job_list->get_map();
     if (map_of_smash_jobs.size() == 0) {
         this->max_from_stopped_jobs_id = 0;
     }
     int max_job_id = 0;
-    for (auto job : map_of_smash_jobs ){
-        if (job.first > max_job_id && job.second.if_is_stopped()) {
+    for (auto job : map_of_smash_jobs )
+    {
+        if (job.first > max_job_id && job.second.if_is_stopped())
+        {
             max_job_id = job.first;
         }
     }
     this->max_from_stopped_jobs_id  = max_job_id;
 }
 
-/// #JobEntry begin
 
-JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
+///
+/// #JobEntry
+///
+
+JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd)
+{
     this->time_of_command = time(nullptr);
-    this->jobID=jobId;
-    this->pid=pid;
-    if (this->time_of_command == -1) {
-        perror("smash error: time failed");
+    this->jobID = jobId;
+    this->pid = pid;
+
+    if (this->time_of_command == -1)
+    {
+        smashError("time failed", 1);
+        return;
     }
 }
 
-pid_t JobsList::JobEntry::getPid() const {
+pid_t JobsList::JobEntry::getPid() const
+{
     return this->pid;
 }
 
-const char *JobsList::JobEntry::getCommand() const {
+const char *JobsList::JobEntry::getCommand() const
+{
     return this->command->getCommandLine();
 }
 
-void JobsList::JobEntry::deleteCommand() {
+void JobsList::JobEntry::deleteCommand()
+{
     delete this->command;
 }
 
-bool JobsList::JobEntry::if_is_background() const {
+bool JobsList::JobEntry::if_is_background() const
+{
     return this->command->if_is_background();
 }
 
-void JobsList::JobEntry::setBackground(bool mode) const {
+void JobsList::JobEntry::setBackground(bool mode) const
+{
     this->command->setBackground(mode);
 }
 
-void JobsList::JobEntry::setStopped(bool stopped) const {
+void JobsList::JobEntry::setStopped(bool stopped) const
+{
     this->command->setStopped(stopped);
 }
 
-bool JobsList::JobEntry::if_is_stopped()const {
+bool JobsList::JobEntry::if_is_stopped()const
+{
     return this->command->if_is_stopped();
 }
 
-time_t JobsList::JobEntry::get_time_of_command() const {
+time_t JobsList::JobEntry::get_time_of_command() const
+{
     return this->time_of_command;
 }
 
-void JobsList::JobEntry::set_time_of_command(time_t time)  {
+void JobsList::JobEntry::set_time_of_command(time_t time)
+{
     this->time_of_command=time;
 }
 
-string JobsList::JobEntry::toString() const {
+string JobsList::JobEntry::toString() const
+{
     int pid = this->getPid();
     string command = this->getCommand();
     return command + " : " + std::to_string(pid);
 }
-
-///
-/// #jobs section ends
-///
 
 
 ///
 /// #ExternalCommand
 /// \param cmd_line
 /// \param is_bg
-ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
+ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line)
+{
     this->external = true;
-    this->background=is_bg;
+    this->background = is_bg;
 }
-void ExternalCommand::execute() {
+
+void ExternalCommand::execute()
+{
     int pid = fork();
     if (pid == -1) {
         smashError("fork failed", true);
         return;
     }
-    if (pid == 0) {
+    if (pid == 0)
+    {
         setpgrp();
         char external_params[200] = {0};
 
@@ -1006,12 +1031,13 @@ void ExternalCommand::execute() {
         _trim(external_params);//todo: make sure what this command do
         _removeBackgroundSign(external_params);
 
-        char* param0=(char *) "/bin/bash";
-        char*param1=(char *) "-c";
-        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
-        int ans = execv("/bin/bash", params_for_exec);
+        char* first_param = (char*)"/bin/bash";
+        char* second_param = (char*)"-c";
+        char *const params_for_exec[] = {first_param, second_param, external_params, nullptr};
+        int execv_check = execv("/bin/bash", params_for_exec);
 
-        if (ans == -1) {
+        if (execv_check == -1)
+        {
             smashError("execv failed", true);
             return;
         }

@@ -139,7 +139,7 @@ public:
    int get_job_id_by_pid(int pid);
    void change_last_stopped_job_id();
     const std::map<int, JobEntry> &get_map() const;
-    int return_max_stopped_jobs_id();
+    int return_max_stopped_jobs_id_in_map();
 };
 
 class JobsCommand : public BuiltInCommand {
