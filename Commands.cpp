@@ -93,8 +93,10 @@ static vector<string> splitStringToWords(const string &str)
 {
     vector<string> words_vector;
     string word = "";
-    for(unsigned int i = 0; i < str.length(); i++){
-        if (str.at(i) == ' ' && word != "") {
+    for(unsigned int i = 0; i < str.length(); i++)
+    {
+        if (str.at(i) == ' ' && word != "")
+        {
             words_vector.push_back(word);
             word = "";
         }
@@ -126,7 +128,6 @@ bool checkIfInt(const string &str)
 
 vector<string> get_param_of_pipe(const string &str)
 {
-
     vector<string> result = {"", ""};
     bool is_second_arg = false;
 
@@ -162,7 +163,6 @@ vector<string> get_param_of_pipe(const string &str)
 
 vector<string> get_param_of_pipe_with_arr(const string &str)
 {
-
     vector<string> result = {"", ""};
     bool is_second_arg = false;
     bool found_first= false;
@@ -207,7 +207,6 @@ vector<string> get_param_of_pipe_with_arr(const string &str)
 
 vector<string> get_param_case_override(const string &str)
 {
-
     vector<string> result = {"", ""};
     bool is_second_arg = false;
 
@@ -242,7 +241,6 @@ vector<string> get_param_case_override(const string &str)
 }
 vector<string> get_param_case_append(const string &str)
 {
-
     vector<string> result = {"", ""};
     bool is_second_arg = false;
     bool found_first= false;
@@ -340,42 +338,59 @@ void smashError(string errMsg, bool isKernelError = false){
 /// #Command (abstract command)
 /// \param cmd_line
 
-Command::Command(const char *cmd_line) {
+Command::Command(const char *cmd_line)
+{
     int len = strlen(cmd_line);
     char *command_to_insert = new char[len + 1];
     strcpy(command_to_insert, cmd_line);
     this->commandLine = command_to_insert;
-    vector<string> split_params_to_words = splitStringToWords(this->commandLine);
-    for (unsigned int i = 1; i < split_params_to_words.size(); i++) {
-        this->params.push_back(split_params_to_words[i]);
+    vector<string> params_vector = splitStringToWords(this->commandLine);
+    for (unsigned int i = 1; i < params_vector.size(); i++)
+    {
+        this->params.push_back(params_vector[i]);
     }
 }
 
-Command::~Command() {
+Command::~Command()
+{
     delete this->commandLine;
 }
-bool Command::if_is_stopped() const {
+
+bool Command::if_is_stopped() const
+{
     return this->stopped;
 }
-void Command::setStopped(bool stopped) {
+
+void Command::setStopped(bool stopped)
+{
     this->stopped = stopped;
 }
+
+// todo: remove this comment
 //bool Command::isExternal() const {
 //    return this->external;
 //}
-bool Command::if_is_background() const {
+
+bool Command::if_is_background() const
+{
     return this->background;
 }
-void Command::setBackground(bool background) {
+
+void Command::setBackground(bool background)
+{
     this->background = background;
 }
-const char *Command::getCommandLine() const {
+
+const char *Command::getCommandLine() const
+{
     return this->commandLine;
 }
 
-bool Command::isExternal() const {
+bool Command::isExternal() const
+{
     return this->external;
 }
+
 
 ///
 /// #BuiltInCommand
@@ -388,14 +403,17 @@ BuiltInCommand::BuiltInCommand(const char *cmd_line) : Command(cmd_line) {}
 /// \param cmd_line
 
 ChpromptCommand::ChpromptCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void ChpromptCommand::execute() {
-    if (this->params.empty()) {
+void ChpromptCommand::execute()
+{
+    if (this->params.empty())
+    {
         smash.setPrompt("smash> ");
     }
-    else {
-        string newPromptName = this->params.at(0);
-        newPromptName.append("> ");
-        smash.setPrompt(newPromptName);
+    else
+    {
+        string new_prompt = this->params.at(0);
+        new_prompt.append("> ");
+        smash.setPrompt(new_prompt);
     }
 }
 
@@ -404,9 +422,9 @@ void ChpromptCommand::execute() {
 /// \param cmd_line
 
 ShowPidCommand::ShowPidCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+
 void ShowPidCommand::execute() {
-    string res="smash pid is ";
-    cout << res<<smash.getPid()<< endl;
+    cout << "smash pid is " << smash.getPid() << endl;
 }
 
 ///
@@ -414,19 +432,24 @@ void ShowPidCommand::execute() {
 /// \param cmd_line
 
 GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void GetCurrDirCommand::execute() {
-    char *currDirCommand = get_current_dir_name();
-    if (currDirCommand == nullptr) {
-        perror("error : get_current_dir_name failed");
+
+void GetCurrDirCommand::execute()
+{
+    char *curr_dir_cmd = get_current_dir_name();
+    if (curr_dir_cmd == nullptr)
+    {
+        smashError("error : get_current_dir_name failed", 1);
         return;
     }
-    string result = currDirCommand;
-    free(currDirCommand);
-    if (result == "") {
+    string res = curr_dir_cmd;
+    free(curr_dir_cmd);
+    if (res == "")
+    {
         return;
     }
-    else {
-        cout << result << endl;
+    else
+    {
+        cout << res << endl;
     }
 }
 
@@ -436,66 +459,70 @@ void GetCurrDirCommand::execute() {
 
 
 ChangeDirCommand::ChangeDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void ChangeDirCommand::execute() {
-    string last_dir = smash.getLastDir();
-    string curr_dir = "";
+void ChangeDirCommand::execute()
+{
+    string prev_directory = smash.getLastDir();
+    string curr_directory = "";
 
-    if (this->params.size() > 1) {
+    if (this->params.size() > 1)
+    {
         smashError("cd: too many arguments");
-//        cerr<<"smash error: cd: too many arguments"<<endl;
         return;
     }
-    else if(this->params.size()==0){ //Todo: ask about zero arguments
-        smashError("cd: zero arguments");
-//        cerr << "smash error: cd: zero arguments" << endl;
+
+    else if(this->params.empty())
+    {
+        return;
     }
-    else if (this->params[0] == "-") {
-        if (last_dir == "") {
+
+    else if (this->params[0] == "-")
+    {
+        if (prev_directory == "")
+        {
             smashError("cd: OLDPWD not set");
-//            cerr<<"smash error: cd: OLDPWD not set"<<endl;
             return;
         }
-        last_dir = smash.getCurrDir();
-        curr_dir = smash.getLastDir();
+        prev_directory = smash.getCurrDir();
+        curr_directory = smash.getLastDir();
 
-        int result = chdir(curr_dir.c_str());//curr_dir.c_str()
-        if (result == -1) {
+        int result = chdir(curr_directory.c_str());
+        if (result == -1)
+        {
             smashError("chdir failed", true);
-//            perror("smash error: chdir failed");
             return;
         }
+        smash.setCurrDir(curr_directory);
+        smash.setLastDir(prev_directory);
+        return;
+    }
 
-        smash.setCurrDir(curr_dir);
-        smash.setLastDir(last_dir);
-        return;
-    }
-    else if (this->params.empty()) {
-        return;
-    }
-    else {
-        char *currDirCommand = get_current_dir_name();
-        if (currDirCommand == nullptr) {
+    else
+    {
+        char *curr_dir_cmd = get_current_dir_name();
+        if (curr_dir_cmd == nullptr)
+        {
             smashError("get_current_dir_name failed", true);
-//            perror("ERROR : get_current_dir_name failed");
             return ;
         }
 
-        last_dir = currDirCommand;
-        free(currDirCommand);
+        prev_directory = curr_dir_cmd;
+        free(curr_dir_cmd);
 
-        ///todo: check about (last_dir == curr_dir)
-        int ans = chdir(this->params[0].c_str());
-        if (ans == -1) {
+        // todo: check about (last_dir == curr_dir)
+        int check_syscall = chdir(this->params[0].c_str());
+        if (check_syscall == -1)
+        {
             smashError("chdir failed", true);
-//            perror("smash error: chdir failed");
             return;
         }
-        curr_dir = this->params[0];
-        smash.setCurrDir(curr_dir);
-        smash.setLastDir(last_dir);
+
+        curr_directory = this->params[0];
+        smash.setCurrDir(curr_directory);
+        smash.setLastDir(prev_directory);
         return;
     }
 }
+
 
 ///
 /// #JobsCommand
@@ -503,8 +530,10 @@ void ChangeDirCommand::execute() {
 /// \param jobs
 
 JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
-void JobsCommand::execute() {
-    JobsList* jobs_list=smash.get_ptr_to_jobslist();
+
+void JobsCommand::execute()
+{
+    JobsList* jobs_list = smash.get_ptr_to_jobslist();
     jobs_list->removeFinishedJobs();
     jobs_list->printJobsList();
 }
@@ -514,37 +543,43 @@ void JobsCommand::execute() {
 ///
 
 KillCommand::KillCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line) ,jobs_list(jobs){}
-void KillCommand::execute() {
+void KillCommand::execute()
+{
+    int signal_num = 0;
+    int job_id = 0;
+
     if (this->params.size() != 2) {
-        cerr << "smash error: kill: invalid arguments" << endl;
+        smashError("kill: invalid arguments");
         return;
     }
 
-    int sig_num = 0;
-    int job_id = 0;
     if (!checkIfInt(this->params[0]) || !checkIfInt(this->params[1])) {
-        cerr << "smash error: kill: invalid arguments" << endl;
+        smashError("kill: invalid arguments");
         return;
     }
-    else {
-        sig_num = stoi(this->params[0]);
-        job_id = stoi(this->params[1]);
-    }
+
+    signal_num = stoi(this->params[0]);
+    job_id = stoi(this->params[1]);
+
     if (job_id < 0) {
-        cerr << "smash error: kill: job-id " << job_id << " does not exist" << endl;
+        string to_print = "kill: job-id " + to_string(job_id) + " does not exist";
+        smashError(to_print);
+//        cerr << "smash error: kill: job-id " << job_id << " does not exist" << endl;
         return;
     }
-    if (sig_num >= 0) {
-        cerr << "smash error: kill: invalid arguments" << endl;
+
+    if (signal_num >= 0) {
+        smashError("kill: invalid arguments");
         return;
     }
-    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
+
+    map<int, JobsList::JobEntry> map = this->jobs_list->get_map();
     if (map.find(job_id) == map.end()) {
         smashError("kill: job-id " + to_string(job_id) + " does not exist");
         return;
     }
 
-    int abs_sig_num = abs(sig_num);
+    int abs_sig_num = abs(signal_num);
     int pid_of_job = map.find(job_id)->second.getPid();
 
     if (kill(pid_of_job, abs_sig_num) == -1) {
@@ -705,14 +740,12 @@ void QuitCommand::execute() {
 }
 
 
-
-
 ///
 /// #jobs section starts
 ///
 
 ///
-/// #jobs list start
+/// #JobsList start
 ///
 
 void JobsList::printJobsList() {
@@ -735,32 +768,34 @@ void JobsList::printJobsList() {
 
 void JobsList::removeFinishedJobs() {
     int status;
-    int childPid = waitpid(-1, &status, WNOHANG);
-    while (childPid > 0) {
-        int jobId = get_job_id_by_pid(childPid);
-        if (jobId != 0) {
-            removeJobById(jobId);
+    int child_pid_finished = waitpid(-1, &status, WNOHANG);
+    while (child_pid_finished > 0)
+    {
+        int job_id_child_finished = get_job_id_by_pid(child_pid_finished);
+        if (job_id_child_finished != 0)
+        {
+            removeJobById(job_id_child_finished);
         }
-        childPid = waitpid(-1, &status, WNOHANG);
+        child_pid_finished = waitpid(-1, &status, WNOHANG);
     }
 }
 
-void JobsList::removeJobById(int jobId) {
-    JobEntry job = this->map_of_smash_jobs.find(jobId)->second;
-    job.deleteCommand();
-
-    this->map_of_smash_jobs.erase(jobId);
+void JobsList::removeJobById(int job_id) {
+    JobEntry job_entry = this->map_of_smash_jobs.find(job_id)->second;
+    job_entry.deleteCommand();
+    this->map_of_smash_jobs.erase(job_id);
     int maxJob = return_max_job_id_in_Map();
-
     set_max_from_jobs_id(maxJob);
 }
 
 int JobsList::return_max_job_id_in_Map() {
-    if (this->map_of_smash_jobs.size() == 0) {
+    if (this->map_of_smash_jobs.size() == 0)
+    {
         return 0;
     }
     int max = 0;
-    for (const auto &job : this->map_of_smash_jobs) {
+    for (const auto &job : this->map_of_smash_jobs)
+    {
         if (job.first > max) {
             max = job.first;
         }
@@ -778,11 +813,15 @@ int JobsList::get_max_from_stopped_jobs_id() const {
 }
 
 int JobsList::get_job_id_by_pid(int pid) {
-    if (this->map_of_smash_jobs.size() == 0) {
+//    map<int, JobsList::JobEntry> map_of_smash_jobs = this->map_of_smash_jobs;
+    if (this->map_of_smash_jobs.size() == 0)
+    {
         return 0;
     }
-    for (const auto &job : this->map_of_smash_jobs) {
-        if (job.second.getPid() == pid) {
+    for (const auto &job : this->map_of_smash_jobs)
+    {
+        if (job.second.getPid() == pid)
+        {
             return job.first;
         }
     }
@@ -826,7 +865,7 @@ void JobsList::change_last_stopped_job_id() {
     this->max_from_stopped_jobs_id  = Max;
 }
 
-/// #job entry begin
+/// #JobEntry begin
 
 JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
     this->time_of_command = time(nullptr);
@@ -1496,7 +1535,8 @@ time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
 /// #smash
 ///
 
-SmallShell::SmallShell():jobs(JobsList()) {
+SmallShell::SmallShell():jobs(JobsList())
+{
     this->pid = getpid();
     this->fgprocess=0;
 }
