@@ -749,17 +749,30 @@ void QuitCommand::execute() {
 ///
 
 void JobsList::printJobsList() {
-    for (auto &jobEntry : this->map_of_smash_jobs) {
-        time_t now = time(nullptr);
-        if (now == -1) {
+    for (auto &job_entry : this->map_of_smash_jobs)
+    {
+        time_t time_now = time(nullptr);
+        if (time_now == -1)
+        {
             smashError("time failed", true);
             return;
         }
-        auto job = jobEntry.second;
-        cout << "[" << job.getJobId() << "] " << job.getCommand() << " : "
-             << job.getPid() << " "
-             << difftime(now, job.get_time_of_command()) << " secs";
-        if (job.if_is_stopped()) {
+        auto job = job_entry.second;
+        int job_id = job.getJobId();
+        string job_command = job.getCommand();
+        int job_pid = job.getPid();
+        double diff_time = difftime(time_now, job.get_time_of_command());
+
+        cout
+        << "[" << job_id << "] "
+        << job_command << " : "
+        << job_pid << " "
+        << diff_time
+        << " secs";
+
+        int if_is_stopped = job.if_is_stopped();
+        if (if_is_stopped)
+        {
             cout << " (stopped)";
         }
         cout << endl;
@@ -813,7 +826,7 @@ int JobsList::get_max_from_stopped_jobs_id() const {
 }
 
 int JobsList::get_job_id_by_pid(int pid) {
-//    map<int, JobsList::JobEntry> map_of_smash_jobs = this->map_of_smash_jobs;
+//    map<int, JobsList::JobEntry> &map_of_smash_jobs = this->map_of_smash_jobs;
     if (this->map_of_smash_jobs.size() == 0)
     {
         return 0;
