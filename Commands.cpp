@@ -253,7 +253,7 @@ bool is_out(const string &str) {
 bool is_err(const string &str) {
     return (str.find("|&") != str.npos);
 }
-
+//2^8 main working well (except kill)
 ///
 /// smash helper functions
 ///
