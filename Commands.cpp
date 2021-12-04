@@ -747,18 +747,22 @@ void BackgroundCommand::execute()
 /// \param cmd_line
 /// \param jobs
 QuitCommand::QuitCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
-void QuitCommand::execute() {
-    this->jobs_list->removeFinishedJobs();
+
+void QuitCommand::execute()
+{
+    JobsList* jobs_list = this->jobs_list;
+    jobs_list->removeFinishedJobs();
+//    this->jobs_list->removeFinishedJobs();
     auto params = this->params;
     if (!params.empty() && params[0] == "kill") {
-        this->jobs_list->removeFinishedJobs();
-        map<int, JobsList::JobEntry> jobs = this->jobs_list->get_map();
-        cout << "smash: sending SIGKILL signal to " << jobs.size() << " jobs:" << endl;
-        for(auto job : jobs){
-            int pid = job.second.getPid();
+        jobs_list->removeFinishedJobs();
+        map<int, JobsList::JobEntry> map_of_smash_jobs = this->jobs_list->get_map();
+        cout << "smash: sending SIGKILL signal to " << map_of_smash_jobs.size() << " jobs:" << endl;
+        for(auto job : map_of_smash_jobs){
+            int job_id = job.second.getPid();
             string command = job.second.getCommand();
-            cout << pid << ": " << command << endl;
-            if (kill(pid, SIGKILL) == -1) {
+            cout << job_id << ": " << command << endl;
+            if (kill(job_id, SIGKILL) == -1) {
                 smashError("kill failed", true);
             }
         }
