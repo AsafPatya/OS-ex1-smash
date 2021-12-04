@@ -752,8 +752,8 @@ void QuitCommand::execute()
 {
     JobsList* jobs_list = this->jobs_list;
     jobs_list->removeFinishedJobs();
-//    this->jobs_list->removeFinishedJobs();
     auto params = this->params;
+
     if (!params.empty() && params[0] == "kill") {
         jobs_list->removeFinishedJobs();
         map<int, JobsList::JobEntry> map_of_smash_jobs = this->jobs_list->get_map();
