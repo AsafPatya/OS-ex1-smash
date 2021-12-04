@@ -296,6 +296,25 @@ bool is_err(const string &str)
 }
 
 ///
+/// \param fd
+/// \param index
+/// \return -1 on error
+/// \return 0 on eof
+/// \return the index of the next line
+int readNextLine(int fd, string& str){
+    char buffer;
+    str = "";
+    do {
+        int readResult = read(fd, &buffer, 1);
+        if (readResult == -1 || readResult == 0){
+            return readResult;
+        }
+        str += buffer;
+    } while (buffer != '\n');
+    return 1;
+}
+
+///
 /// smash helper functions
 ///
 
@@ -1062,13 +1081,12 @@ void ExternalCommand::execute()
 }
 
 
+///
+/// #specialcommands
+///
 
 ///
-/// special commands start
-///
-
-///
-/// pipe command
+/// #PipeCommand
 ///
 PipeCommand::PipeCommand(const char *cmd_line, bool out1): Command(cmd_line), ifout(out1) {}
 void PipeCommand::execute() {
@@ -1180,7 +1198,7 @@ void PipeCommand::execute() {
 
 
 ///
-/// redirection command
+/// #RedirectionCommand
 ///
 
 RedirectionCommand::RedirectionCommand(const char *cmd_line, bool background_flag, bool override_flag):Command(cmd_line),
@@ -1268,32 +1286,6 @@ void RedirectionCommand::execute() {
 }
 
 
-
-
-///
-/// special commands end
-///
-
-
-///
-/// \param fd
-/// \param index
-/// \return -1 on error
-/// \return 0 on eof
-/// \return the index of the next line
-int readNextLine(int fd, string& str){
-    char buffer;
-    str = "";
-    do {
-        int readResult = read(fd, &buffer, 1);
-        if (readResult == -1 || readResult == 0){
-            return readResult;
-        }
-        str += buffer;
-    } while (buffer != '\n');
-    return 1;
-}
-
 ///
 /// #HeadCommand
 /// \param cmd_line
@@ -1350,16 +1342,8 @@ void HeadCommand::execute() {
 }
 
 
-
-
-
 ///
-/// timeout section start
-///
-
-
-///
-/// timeout command
+/// #TimeoutCommand
 ///
 
 TimeoutCommand::TimeoutCommand(const char *cmd_line, bool isBackground_flag) : Command(cmd_line) {
@@ -1593,12 +1577,6 @@ char *TimeList::TimeEntry::getCommand() const {
 time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
     return this->timeOfCommandCame;
 }
-
-
-
-
-
-
 
 
 
