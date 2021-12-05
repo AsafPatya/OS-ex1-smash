@@ -1480,9 +1480,9 @@ void TimeoutCommand::execute()
     }
 }
 
-
-/////timeList section
-
+///
+/// #TimeList
+///
 
 int TimeList::getMaxId() {
     return this->maxTimeId;
@@ -1494,26 +1494,27 @@ void TimeList::setMaxTimeId(int max_time_entry_id) {
 }
 
 
-int TimeList::addTime(int job_id, int pid, int timeOfDur, char *command) {
-    int new_time_id = getMaxId();
-    new_time_id += 1;
+int TimeList::addTime(int job_id, int pid, int timeOfDur, char *command)
+{
+    int max_time_id = getMaxId();
+    max_time_id += 1;
 
-    TimeEntry newTimeEntery(new_time_id, job_id, pid, timeOfDur, command);
-    this->timeMap.insert(std::pair<int, TimeEntry>(new_time_id, newTimeEntery));
+    TimeEntry new_time_entry_to_enter(max_time_id, job_id, pid, timeOfDur, command);
+    this->timeMap.insert(std::pair<int, TimeEntry>(max_time_id, new_time_entry_to_enter));
 
-    setMaxTimeId(new_time_id);
-    return new_time_id;
+    setMaxTimeId(max_time_id);
+    return max_time_id;
 }
-
 
 void TimeList::removeTimeById(int time_entry_id)
 {
     this->timeMap.erase(time_entry_id);
 
-    int max_time_id = getMaxKeyInMap();
+    int get_max_key_in_map = getMaxKeyInMap();
 
-    setMaxTimeId(max_time_id);
+    setMaxTimeId(get_max_key_in_map);
 }
+
 int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now)
 {
     for (auto &pair: this->timeMap) {
@@ -1525,63 +1526,56 @@ int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now)
     return -1;
 }
 
-//int TimeList::get_JobId_Of_finished_timeout(time_t now) {
-//
-//    for (auto &pair: this->timeMap) {
-//        int until_finished = pair.second.getTimeOfDur() - difftime(now, pair.second.getTimeOfCommandCame());
-//        if (until_finished <= 0) {
-//            return pair.second.getJobId();
-//        }
-//    }
-//    return -1;
-//}
-//
 int TimeList::getMaxKeyInMap() {
-
-    if (this->timeMap.size() == 0) {
+    std::map<int, TimeEntry> timeMap = this->timeMap;
+    if (timeMap.size() == 0) {
         return 0;
     }
-    int max_Time_ID = 0;
+    int max_of_time_id = 0;
 
-    for (const auto &pair : this->timeMap) {
-        if (pair.first > max_Time_ID) {
-            max_Time_ID = pair.first;
+    for (const auto &pair : timeMap) {
+        if (pair.first > max_of_time_id) {
+            max_of_time_id = pair.first;
         }
     }
-    return max_Time_ID;
+    return max_of_time_id;
 }
 
 
-void TimeList::change_Max_TimeId() {
-    if (this->timeMap.size() == 0) {
+void TimeList::change_Max_TimeId()
+{
+    std::map<int, TimeEntry> timeMap = this->timeMap;
+    if (timeMap.size() == 0) {
         this->maxTimeId = 0;
     }
 
-    int max_time_id = 0;
+    int max_of_time_id = 0;
 
-    for (auto pair : this->timeMap) {
-        if (pair.first > max_time_id) {
-            max_time_id = pair.first;
+    for (auto pair : timeMap) {
+        if (pair.first > max_of_time_id) {
+            max_of_time_id = pair.first;
         }
     }
-    this->maxTimeId = max_time_id;
+    this->maxTimeId = max_of_time_id;
+    return;
 }
 
-
-void TimeList::What_is_the_Next_Timeout(time_t time_now) {
-
-    if (this->timeMap.empty()) {
+void TimeList::What_is_the_Next_Timeout(time_t time_now)
+{
+    std::map<int, TimeEntry> timeMap = this->timeMap;
+    if (timeMap.empty())
+    {
         return;
     }
-    int next_timeout_cmd = -1;
+    int next_command_timeout = -1;
 
-    for (auto &pair : this->timeMap) {
+    for (auto &pair : timeMap) {
         int diff = pair.second.getTimeOfDur() - difftime(time_now, pair.second.getTimeOfCommandCame());
-        if (diff < next_timeout_cmd || next_timeout_cmd == -1) {
-            next_timeout_cmd = diff;
+        if (diff < next_command_timeout || next_command_timeout == -1) {
+            next_command_timeout = diff;
         }
     }
-    alarm(next_timeout_cmd);
+    alarm(next_command_timeout);
 }
 
 const map<int, TimeList::TimeEntry> &TimeList::getTimeMap() const {
@@ -1589,8 +1583,10 @@ const map<int, TimeList::TimeEntry> &TimeList::getTimeMap() const {
 }
 
 
+///
+/// #TimeEntry
+///
 
-/////timeEntry section
 
 TimeList::TimeEntry::TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command) : id(id), job_id(job_id),pid(pid),timeOfDur(timeOfDur),command(command) {
     this->timeOfCommandCame = time(nullptr);
@@ -1599,23 +1595,26 @@ TimeList::TimeEntry::TimeEntry(int id, int job_id, int pid, int timeOfDur, char 
     }
 }
 
-
-int TimeList::TimeEntry::getJobId() const {
+int TimeList::TimeEntry::getJobId() const
+{
     return this->job_id;
 }
 
 
-int TimeList::TimeEntry::getPid() const {
+int TimeList::TimeEntry::getPid() const
+{
     return this->pid;
 }
 
 
-int TimeList::TimeEntry::getTimeOfDur() const {
+int TimeList::TimeEntry::getTimeOfDur() const
+{
     return this->timeOfDur;
 }
 
 
-char *TimeList::TimeEntry::getCommand() const {
+char *TimeList::TimeEntry::getCommand() const
+{
     return this->command;
 }
 
@@ -1623,23 +1622,6 @@ char *TimeList::TimeEntry::getCommand() const {
 time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
     return this->timeOfCommandCame;
 }
-
-
-
-
-
-///
-/// timeout section end
-///
-
-
-
-
-
-
-///
-/// smash section
-///
 
 
 ///
@@ -1654,27 +1636,29 @@ SmallShell::SmallShell():jobs(JobsList())
 
 SmallShell::~SmallShell() {}
 
-Command * SmallShell::CreateCommand(const char* cmd_line) {
+Command * SmallShell::CreateCommand(const char* cmd_line)
+{
     string command_line = string(cmd_line);
 
     bool background = _isBackgroundComamnd(cmd_line);
 
-    bool ans_to_pipe1 = is_out(command_line);
-    bool ans_to_pipe_err1 = is_err(command_line);
+    bool is_out_flag = is_out(command_line);
+    bool is_err_flag = is_err(command_line);
 
-    bool ans_to_override1 = is_ovveride(command_line);
-    bool ans_to_append1 = is_append(command_line);
+    bool is_override_flag = is_ovveride(command_line);
+    bool is_append_flag = is_append(command_line);
 
-    if (ans_to_pipe1 || ans_to_pipe_err1) {
+    if (is_out_flag || is_err_flag)
+    {
         bool isout = true;
-        if(ans_to_pipe_err1){
+        if(is_err_flag){
             isout= false;
         }
         return new PipeCommand(cmd_line,isout);
     }
-    else if (ans_to_append1 || ans_to_override1) {
+    else if (is_append_flag || is_override_flag) {
         bool override = true;
-        if (ans_to_append1) {
+        if (is_append_flag) {
             override = false;
         }
         return new RedirectionCommand(cmd_line,background,override);
@@ -1724,13 +1708,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
 void SmallShell::executeCommand(const char *cmd_line) {
     this->jobs.removeFinishedJobs();//todo: check with asaf
-    Command *command = CreateCommand(cmd_line);
-    if (command) {
-        if (command->isExternal()) {
-            command->execute();
+    Command *new_command = CreateCommand(cmd_line);
+    if (new_command) {
+        if (new_command->isExternal()) {
+            new_command->execute();
         } else {
-            command->execute();
-            delete command;
+            new_command->execute();
+            delete new_command;
         }
     }
 }
