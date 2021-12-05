@@ -12,8 +12,11 @@
 using std::vector;
 using std::string;
 
-class Command {
-// TODO: Add your data members
+///
+/// #Command
+///
+
+class Command{
 protected:
     char *commandLine;
     vector<string> params;
@@ -22,129 +25,32 @@ protected:
     bool background = false;
     bool foreground= false;
 
- public:
+public:
   Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
-  //virtual void prepare();
-  //virtual void cleanup();
-  // TODO: Add your extra methods if needed
   bool if_is_stopped() const;
-    void setStopped(bool stopped);
-    bool if_is_background() const;
-    void setBackground(bool background);
-    bool isExternal() const;
-    const char *getCommandLine() const;
+  void setStopped(bool stopped);
+  bool if_is_background() const;
+  void setBackground(bool background);
+  bool isExternal() const;
+  const char *getCommandLine() const;
+//    virtual void prepare();
+//    virtual void cleanup();
 //    const vector<string> &getParams() const;
 //    const string &getStartCommand() const;
 };
+
+
+///
+/// #BuiltInCommand
+///
 
 class BuiltInCommand : public Command {
  public:
   BuiltInCommand(const char* cmd_line);
   virtual ~BuiltInCommand() {}
 };
-
-class ExternalCommand : public Command {
-public:
-    ExternalCommand(const char* cmd_line,bool is_bg);
-    virtual ~ExternalCommand() {}
-    void execute() override;
-};
-
-///
-/// special commands
-///
-
-class PipeCommand : public Command {
-    // TODO: Add your data members
-private:
-    bool ifout;
-public:
-    PipeCommand(const char* cmd_line, bool out1);
-    virtual ~PipeCommand() {}
-    void execute() override;
-};
-
-class RedirectionCommand : public Command {
-    // TODO: Add your data members
-private:
-    bool override;
-public:
-    explicit RedirectionCommand(const char* cmd_line,bool background_flag,bool override_flag);
-    virtual ~RedirectionCommand() {}
-    void execute() override;
-    //void prepare() override;
-    //void cleanup() override;
-};
-
-
-
-
-///
-/// timeout command
-///
-
-
-
-class TimeList {
-public:
-    class TimeEntry {
-    private:
-        int id = 0;
-        int job_id = 0;
-        int pid = 0;
-        int timeOfDur = 0;
-        char *command;
-        time_t timeOfCommandCame;
-    public:
-        TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command);
-        int getJobId() const;
-        int getPid() const;
-        int getTimeOfDur() const;
-        char *getCommand() const;
-        time_t getTimeOfCommandCame() const;
-//
-        ~TimeEntry() {};
-    };
-
-private:
-    int maxTimeId = 0;
-    std::map<int, TimeEntry> timeMap;
-
-public:
-    TimeList()=default;
-    int getMaxId();
-    int getMaxKeyInMap();
-    void setMaxTimeId(int maxTimeEntryId);
-    int addTime(int job_id, int pid, int timeOfDur, char *command);
-    void removeTimeById(int time_entry_Id);
-    int get_TimeId_Of_finished_Timeout(time_t time_now);
-//    int get_JobId_Of_finished_timeout(time_t now);
-    void change_Max_TimeId();
-    void What_is_the_Next_Timeout(time_t now);
-    const std::map<int, TimeEntry> &getTimeMap() const;
-
-    ~TimeList() {};
-
-};
-
-
-class TimeoutCommand : public Command {
-public:
-    TimeoutCommand(const char *cmd_line, bool isBackground_flag);
-
-    virtual ~TimeoutCommand() {}
-
-    void execute() override;
-};
-
-
-///
-/// general commands
-///
-
-
 
 class ChpromptCommand : public BuiltInCommand {
 public:
@@ -168,43 +74,45 @@ public:
 };
 
 class ChangeDirCommand : public BuiltInCommand {
-// TODO: Add your data members public:
 public:
-  ChangeDirCommand(const char* cmd_line);
-  virtual ~ChangeDirCommand() {}
-  void execute() override;
+    ChangeDirCommand(const char* cmd_line);
+    virtual ~ChangeDirCommand() {}
+    void execute() override;
 };
+
+
+///
+/// #JobsList
+///
 
 class JobsList;
 
-class JobsList {
+class JobsList{
  public:
-  class JobEntry {
-   // TODO: Add your data members
-  private:
-      int pid;
-      int jobID = 0;
-      time_t time_of_command;
-      Command *command;
-//      bool stopped = false;
-  public:
-      JobEntry(int jobId, int pid, Command *cmd);
-      int getPid() const;
-//      void setPid(int pid);
-      int getJobId() const;
-//      void setJobId(int jobId);
-      time_t get_time_of_command() const;
-      void set_time_of_command(time_t time);
-     const char *getCommand() const;
-      void deleteCommand();
-      bool if_is_stopped() const;
-      void setStopped(bool stopped) const;
-      bool if_is_background() const;
-      void setBackground(bool mode) const;
-      string toString() const;
-      ~JobEntry(){};
-  };
- // TODO: Add your data members
+  class JobEntry{
+      private:
+          int pid;
+          int jobID = 0;
+          time_t time_of_command;
+          Command *command;
+    //      bool stopped = false;
+      public:
+          JobEntry(int jobId, int pid, Command *cmd);
+          int getPid() const;
+    //      void setPid(int pid);
+          int getJobId() const;
+    //      void setJobId(int jobId);
+          time_t get_time_of_command() const;
+          void set_time_of_command(time_t time);
+          const char *getCommand() const;
+          void deleteCommand();
+          bool if_is_stopped() const;
+          void setStopped(bool stopped) const;
+          bool if_is_background() const;
+          void setBackground(bool mode) const;
+          string toString() const;
+          ~JobEntry(){};
+      };
 private:
     int max_from_jobs_id = 0;
     int max_from_stopped_jobs_id = 0;
@@ -231,6 +139,7 @@ public:
    int get_job_id_by_pid(int pid);
    void change_last_stopped_job_id();
     const std::map<int, JobEntry> &get_map() const;
+    int return_max_stopped_jobs_id_in_map();
 };
 
 class JobsCommand : public BuiltInCommand {
@@ -276,7 +185,7 @@ private:
 class QuitCommand : public BuiltInCommand {
 // TODO: Add your data members public:
 private:
-    JobsList *jobs_list;
+    JobsList* jobs_list;
 public:
     QuitCommand(const char* cmd_line, JobsList* jobs);
     virtual ~QuitCommand() {}
@@ -290,8 +199,104 @@ class HeadCommand : public BuiltInCommand {
   void execute() override;
 };
 
+
 ///
-/// #smash
+/// #ExternalCommand
+///
+
+class ExternalCommand : public Command {
+public:
+    ExternalCommand(const char* cmd_line,bool is_bg);
+    virtual ~ExternalCommand() {}
+    void execute() override;
+};
+
+
+///
+/// #SpecialCommands
+///
+
+class PipeCommand : public Command {
+    // TODO: Add your data members
+private:
+    bool ifout;
+public:
+    PipeCommand(const char* cmd_line, bool out1);
+    virtual ~PipeCommand() {}
+    void execute() override;
+};
+
+class RedirectionCommand : public Command {
+    // TODO: Add your data members
+private:
+    bool override;
+public:
+    explicit RedirectionCommand(const char* cmd_line,bool background_flag,bool override_flag);
+    virtual ~RedirectionCommand() {}
+    void execute() override;
+    //void prepare() override;
+    //void cleanup() override;
+};
+
+
+///
+/// #TimeoutCommand
+///
+
+
+class TimeList {
+public:
+    class TimeEntry {
+    private:
+        int id = 0;
+        int job_id = 0;
+        int pid = 0;
+        int timeOfDur = 0;
+        char *command;
+        time_t timeOfCommandCame;
+    public:
+        TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command);
+        int getJobId() const;
+        int getPid() const;
+        int getTimeOfDur() const;
+        char *getCommand() const;
+        time_t getTimeOfCommandCame() const;
+        ~TimeEntry() {};
+    };
+
+private:
+    int maxTimeId = 0;
+    std::map<int, TimeEntry> timeMap;
+
+public:
+    TimeList()=default;
+    int getMaxId();
+    int getMaxKeyInMap();
+    void setMaxTimeId(int maxTimeEntryId);
+    int addTime(int job_id, int pid, int timeOfDur, char *command);
+    void removeTimeById(int time_entry_Id);
+    int get_TimeId_Of_finished_Timeout(time_t time_now);
+//    int get_JobId_Of_finished_timeout(time_t now);
+    void change_Max_TimeId();
+    void What_is_the_Next_Timeout(time_t now);
+    const std::map<int, TimeEntry> &getTimeMap() const;
+
+    ~TimeList() {};
+
+};
+
+class TimeoutCommand : public Command {
+public:
+    TimeoutCommand(const char *cmd_line, bool isBackground_flag);
+
+    virtual ~TimeoutCommand() {}
+
+    void execute() override;
+};
+
+
+///
+/// #Smash
 ///
 
 class SmallShell {

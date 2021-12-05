@@ -89,12 +89,15 @@ void _removeBackgroundSign(char* cmd_line) {
 
 ///new functions
 
-static vector<string> splitStringToWords(const string &str) {
-    vector<string> wordsvec;
+static vector<string> splitStringToWords(const string &str)
+{
+    vector<string> words_vector;
     string word = "";
-    for(unsigned int i=0;i<str.length();i++){
-        if (str.at(i) == ' ' && word != "") {
-            wordsvec.push_back(word);
+    for(unsigned int i = 0; i < str.length(); i++)
+    {
+        if (str.at(i) == ' ' && word != "")
+        {
+            words_vector.push_back(word);
             word = "";
         }
         else {
@@ -102,73 +105,93 @@ static vector<string> splitStringToWords(const string &str) {
         }
     }
     if (word != "") {
-        wordsvec.push_back(word);
+        words_vector.push_back(word);
     }
-    return wordsvec;
+    return words_vector;
 }
 
-bool checkIfInt(const string &str) {
-    if (str.empty() || ( (!isdigit(str[0]))&&(str[0] != '-') && (str[0] != '+'))) return false;
-    for(unsigned int i=1;i<str.length();i++){
-        if(isdigit(str[i])==0){
+bool checkIfInt(const string &str)
+{
+    if (str.empty() || ( (!isdigit(str[0])) && (str[0] != '-') && (str[0] != '+')) )
+    {
+        return false;
+    }
+    for(unsigned int i = 1; i < str.length(); i++)
+    {
+        if(!isdigit(str[i]))
+        {
             return false;
         }
     }
     return true;
 }
 
-vector<string> get_param_of_pipe(const string &str) {
-
+vector<string> get_param_of_pipe(const string &str)
+{
     vector<string> result = {"", ""};
     bool is_second_arg = false;
 
-    for(auto ch : str){
-        if (ch != '|') {
-            if (is_second_arg == false) {
+    for(auto ch : str)
+    {
+        if (ch != '|')
+        {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
+            }
+            else
+            {
                 if (result[1].size() == 0 && ch== ' ') {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             int last_index = result[0].length()-1;
-            if (result[0][last_index] == ' ') {
+            if (result[0][last_index] == ' ')
+            {
                 result[0].erase(last_index, 1);
             }
         }
     }
-
     return result;
 }
 
 
-vector<string> get_param_of_pipe_with_arr(const string &str) {
-
+vector<string> get_param_of_pipe_with_arr(const string &str)
+{
     vector<string> result = {"", ""};
     bool is_second_arg = false;
     bool found_first= false;
 
 
-    for(auto ch:str){
-        if(found_first==true){
+    for(auto ch:str)
+    {
+        if(found_first)
+        {
             found_first=false;
             continue;
         }
-        else if (ch != '|') {
-            if (is_second_arg == false) {
+        else if (ch != '|')
+        {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
-                if (result[1].size() == 0 && ch == ' ') {
+            }
+            else
+            {
+                if (result[1].size() == 0 && ch == ' ')
+                {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             found_first= true;
             int last_index = result[0].length()-1;
@@ -182,53 +205,67 @@ vector<string> get_param_of_pipe_with_arr(const string &str) {
 }
 
 
-vector<string> get_param_case_override(const string &str) {
-
+vector<string> get_param_case_override(const string &str)
+{
     vector<string> result = {"", ""};
     bool is_second_arg = false;
 
-    for(auto ch:str){
-        if (ch != '>') {
-            if (is_second_arg == false) {
+    for(auto ch:str)
+    {
+        if (ch != '>')
+        {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
-                if (result[1].size() == 0 && ch == ' ') {
+            }
+            else
+            {
+                if (result[1].size() == 0 && ch == ' ')
+                {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             int last_index=result[0].length()-1;
-            if (result[0][last_index] == ' ') {
+            if (result[0][last_index] == ' ')
+            {
                 result[0].erase(last_index, 1);
             }
         }
     }
     return result;
 }
-vector<string> get_param_case_append(const string &str) {
-
+vector<string> get_param_case_append(const string &str)
+{
     vector<string> result = {"", ""};
     bool is_second_arg = false;
     bool found_first= false;
     for(auto ch:str){
-        if(found_first== true){
+        if(found_first)
+        {
             found_first= false;
             continue;
         }
         else if (ch != '>') {
-            if (is_second_arg == false) {
+            if (!is_second_arg)
+            {
                 result[0].push_back(ch);
-            } else {
-                if (result[1].size() == 0 && ch == ' ') {
+            }
+            else
+            {
+                if (result[1].size() == 0 && ch == ' ')
+                {
                     continue;
                 }
                 result[1].push_back(ch);
             }
         }
-        else {
+        else
+        {
             is_second_arg = true;
             found_first= true;
             int last_index=result[0].length()-1;
@@ -240,25 +277,48 @@ vector<string> get_param_case_append(const string &str) {
     return result;
 }
 
-bool is_ovveride(const string &str) {
+bool is_ovveride(const string &str)
+{
     return (str.find(">") != str.npos);
 }
 
-bool is_append(const string &str) {
+bool is_append(const string &str)
+{
     return (str.find(">>") != str.npos);
 }
-bool is_out(const string &str) {
+bool is_out(const string &str)
+{
     return (str.find("|") != str.npos);
 }
-bool is_err(const string &str) {
+bool is_err(const string &str)
+{
     return (str.find("|&") != str.npos);
 }
 //2^8 main working well (except kill)
 ///
+/// \param fd
+/// \param index
+/// \return -1 on error
+/// \return 0 on eof
+/// \return the index of the next line
+int readNextLine(int fd, string& str){
+    char buffer;
+    str = "";
+    do {
+        int readResult = read(fd, &buffer, 1);
+        if (readResult == -1 || readResult == 0){
+            return readResult;
+        }
+        str += buffer;
+    } while (buffer != '\n');
+    return 1;
+}
+
+///
 /// smash helper functions
 ///
 
-bool xxx(string command, string s){ //todo: change the name
+bool xxx(string s, string command){ //todo: change the name
     //todo: remove spaces from the start of the command
     if (s.length() < command.length())
         return false;
@@ -272,7 +332,7 @@ bool xxx(string command, string s){ //todo: change the name
 
 bool isStringCommand(string s, string command){
 //    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
-    bool b = xxx(command, s);
+    bool b = xxx(s, command);
 //    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
     return b;
     //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
@@ -297,42 +357,59 @@ void smashError(string errMsg, bool isKernelError = false){
 /// #Command (abstract command)
 /// \param cmd_line
 
-Command::Command(const char *cmd_line) {
+Command::Command(const char *cmd_line)
+{
     int len = strlen(cmd_line);
     char *command_to_insert = new char[len + 1];
     strcpy(command_to_insert, cmd_line);
     this->commandLine = command_to_insert;
-    vector<string> split_params_to_words = splitStringToWords(this->commandLine);
-    for (unsigned int i = 1; i < split_params_to_words.size(); i++) {
-        this->params.push_back(split_params_to_words[i]);
+    vector<string> params_vector = splitStringToWords(this->commandLine);
+    for (unsigned int i = 1; i < params_vector.size(); i++)
+    {
+        this->params.push_back(params_vector[i]);
     }
 }
 
-Command::~Command() {
+Command::~Command()
+{
     delete this->commandLine;
 }
-bool Command::if_is_stopped() const {
+
+bool Command::if_is_stopped() const
+{
     return this->stopped;
 }
-void Command::setStopped(bool stopped) {
+
+void Command::setStopped(bool stopped)
+{
     this->stopped = stopped;
 }
+
+// todo: remove this comment
 //bool Command::isExternal() const {
 //    return this->external;
 //}
-bool Command::if_is_background() const {
+
+bool Command::if_is_background() const
+{
     return this->background;
 }
-void Command::setBackground(bool background) {
+
+void Command::setBackground(bool background)
+{
     this->background = background;
 }
-const char *Command::getCommandLine() const {
+
+const char *Command::getCommandLine() const
+{
     return this->commandLine;
 }
 
-bool Command::isExternal() const {
+bool Command::isExternal() const
+{
     return this->external;
 }
+
 
 ///
 /// #BuiltInCommand
@@ -345,14 +422,17 @@ BuiltInCommand::BuiltInCommand(const char *cmd_line) : Command(cmd_line) {}
 /// \param cmd_line
 
 ChpromptCommand::ChpromptCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void ChpromptCommand::execute() {
-    if (this->params.empty()) {
+void ChpromptCommand::execute()
+{
+    if (this->params.empty())
+    {
         smash.setPrompt("smash> ");
     }
-    else {
-        string newPromptName = this->params.at(0);
-        newPromptName.append("> ");
-        smash.setPrompt(newPromptName);
+    else
+    {
+        string new_prompt = this->params.at(0);
+        new_prompt.append("> ");
+        smash.setPrompt(new_prompt);
     }
 }
 
@@ -361,9 +441,9 @@ void ChpromptCommand::execute() {
 /// \param cmd_line
 
 ShowPidCommand::ShowPidCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
+
 void ShowPidCommand::execute() {
-    string res="smash pid is ";
-    cout << res<<smash.getPid()<< endl;
+    cout << "smash pid is " << smash.getPid() << endl;
 }
 
 ///
@@ -371,19 +451,24 @@ void ShowPidCommand::execute() {
 /// \param cmd_line
 
 GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void GetCurrDirCommand::execute() {
-    char *currDirCommand = get_current_dir_name();
-    if (currDirCommand == nullptr) {
-        perror("error : get_current_dir_name failed");
+
+void GetCurrDirCommand::execute()
+{
+    char *curr_dir_cmd = get_current_dir_name();
+    if (curr_dir_cmd == nullptr)
+    {
+        smashError("error : get_current_dir_name failed", 1);
         return;
     }
-    string result = currDirCommand;
-    free(currDirCommand);
-    if (result == "") {
+    string res = curr_dir_cmd;
+    free(curr_dir_cmd);
+    if (res == "")
+    {
         return;
     }
-    else {
-        cout << result << endl;
+    else
+    {
+        cout << res << endl;
     }
 }
 
@@ -393,66 +478,70 @@ void GetCurrDirCommand::execute() {
 
 
 ChangeDirCommand::ChangeDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void ChangeDirCommand::execute() {
-    string last_dir = smash.getLastDir();
-    string curr_dir = "";
+void ChangeDirCommand::execute()
+{
+    string prev_directory = smash.getLastDir();
+    string curr_directory = "";
 
-    if (this->params.size() > 1) {
+    if (this->params.size() > 1)
+    {
         smashError("cd: too many arguments");
-//        cerr<<"smash error: cd: too many arguments"<<endl;
         return;
     }
-    else if(this->params.size()==0){ //Todo: ask about zero arguments
-        smashError("cd: zero arguments");
-//        cerr << "smash error: cd: zero arguments" << endl;
+
+    else if(this->params.empty())
+    {
+        return;
     }
-    else if (this->params[0] == "-") {
-        if (last_dir == "") {
+
+    else if (this->params[0] == "-")
+    {
+        if (prev_directory == "")
+        {
             smashError("cd: OLDPWD not set");
-//            cerr<<"smash error: cd: OLDPWD not set"<<endl;
             return;
         }
-        last_dir = smash.getCurrDir();
-        curr_dir = smash.getLastDir();
+        prev_directory = smash.getCurrDir();
+        curr_directory = smash.getLastDir();
 
-        int result = chdir(curr_dir.c_str());//curr_dir.c_str()
-        if (result == -1) {
+        int result = chdir(curr_directory.c_str());
+        if (result == -1)
+        {
             smashError("chdir failed", true);
-//            perror("smash error: chdir failed");
             return;
         }
+        smash.setCurrDir(curr_directory);
+        smash.setLastDir(prev_directory);
+        return;
+    }
 
-        smash.setCurrDir(curr_dir);
-        smash.setLastDir(last_dir);
-        return;
-    }
-    else if (this->params.empty()) {
-        return;
-    }
-    else {
-        char *currDirCommand = get_current_dir_name();
-        if (currDirCommand == nullptr) {
+    else
+    {
+        char *curr_dir_cmd = get_current_dir_name();
+        if (curr_dir_cmd == nullptr)
+        {
             smashError("get_current_dir_name failed", true);
-//            perror("ERROR : get_current_dir_name failed");
             return ;
         }
 
-        last_dir = currDirCommand;
-        free(currDirCommand);
+        prev_directory = curr_dir_cmd;
+        free(curr_dir_cmd);
 
-        ///todo: check about (last_dir == curr_dir)
-        int ans = chdir(this->params[0].c_str());
-        if (ans == -1) {
+        // todo: check about (last_dir == curr_dir)
+        int check_syscall = chdir(this->params[0].c_str());
+        if (check_syscall == -1)
+        {
             smashError("chdir failed", true);
-//            perror("smash error: chdir failed");
             return;
         }
-        curr_dir = this->params[0];
-        smash.setCurrDir(curr_dir);
-        smash.setLastDir(last_dir);
+
+        curr_directory = this->params[0];
+        smash.setCurrDir(curr_directory);
+        smash.setLastDir(prev_directory);
         return;
     }
 }
+
 
 ///
 /// #JobsCommand
@@ -460,8 +549,10 @@ void ChangeDirCommand::execute() {
 /// \param jobs
 
 JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line), jobs_list(jobs) {}
-void JobsCommand::execute() {
-    JobsList* jobs_list=smash.get_ptr_to_jobslist();
+
+void JobsCommand::execute()
+{
+    JobsList* jobs_list = smash.get_ptr_to_jobslist();
     jobs_list->removeFinishedJobs();
     jobs_list->printJobsList();
 }
@@ -471,51 +562,66 @@ void JobsCommand::execute() {
 ///
 
 KillCommand::KillCommand(const char* cmd_line, JobsList* jobs) : BuiltInCommand(cmd_line) ,jobs_list(jobs){}
-void KillCommand::execute() {
-    if (this->params.size() != 2) {
-        cerr << "smash error: kill: invalid arguments" << endl;
-        return;
-    }
-
-    int sig_num = 0;
+void KillCommand::execute()
+{
+    int signal_num = 0;
     int job_id = 0;
-    if (!checkIfInt(this->params[0]) || !checkIfInt(this->params[1])) {
-        cerr << "smash error: kill: invalid arguments" << endl;
-        return;
-    }
-    else {
-        sig_num = stoi(this->params[0]);
-        job_id = stoi(this->params[1]);
-    }
-    if (job_id < 0) {
-        cerr << "smash error: kill: job-id " << job_id << " does not exist" << endl;
-        return;
-    }
-    if (sig_num >= 0) {
-        cerr << "smash error: kill: invalid arguments" << endl;
-        return;
-    }
-    map<int, JobsList::JobEntry> map=this->jobs_list->get_map();
-    if (map.find(job_id) == map.end()) {
-        smashError("kill: job-id " + to_string(job_id) + " does not exist");
+
+    if (this->params.size() != 2)
+    {
+        smashError("kill: invalid arguments");
         return;
     }
 
-    int abs_sig_num = abs(sig_num);
-    int pid_of_job = map.find(job_id)->second.getPid();
-
-    if (kill(pid_of_job, abs_sig_num) == -1) {
-        perror("smash error: kill failed");
+    if (!checkIfInt(this->params[0]) || !checkIfInt(this->params[1]))
+    {
+        smashError("kill: invalid arguments");
         return;
     }
-    else if (abs_sig_num == 9) {
+
+    signal_num = stoi(this->params[0]);
+    job_id = stoi(this->params[1]);
+
+    if (job_id < 0)
+    {
+        string to_print = "kill: job-id " + to_string(job_id) + " does not exist";
+        smashError(to_print);
+        return;
+    }
+
+    if (signal_num >= 0)
+    {
+        smashError("kill: invalid arguments");
+        return;
+    }
+
+    map<int, JobsList::JobEntry> map_of_smash_jobs = this->jobs_list->get_map();
+    if (map_of_smash_jobs.find(job_id) == map_of_smash_jobs.end())
+    {
+        string to_print = "kill: job-id " + to_string(job_id) + " does not exist";
+        smashError(to_print);
+        return;
+    }
+
+    int abs_signal_num = abs(signal_num);
+    int job_pid = map_of_smash_jobs.find(job_id)->second.getPid();
+
+    if (kill(job_pid, abs_signal_num) == -1)
+    {
+        smashError("kill failed", 1);
+        return;
+    }
+    else if (abs_signal_num == 9)
+    {
         this->jobs_list->removeJobById(job_id);
     }
-    else if(abs_sig_num==19){
+    else if(abs_signal_num == 19)
+    {
         smash.getJobsList().get_map().find(job_id)->second.setStopped(true);
     }
-    cout << "signal number " << abs_sig_num << " was sent to pid " << pid_of_job << endl;
+    cout << "signal number " << abs_signal_num << " was sent to pid " << job_pid << endl;
 }
+
 
 ///
 /// #ForegroundCommand
@@ -523,38 +629,46 @@ void KillCommand::execute() {
 /// \param jobs
 
 ForegroundCommand::ForegroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
-void ForegroundCommand::execute() {
-    int job_id;
-    map<int, JobsList::JobEntry> map = this->jobs_list->get_map();
 
-    if (this->params.size() > 1) {
+void ForegroundCommand::execute()
+{
+    int job_id;
+    map<int, JobsList::JobEntry> map_of_smash_jobs = this->jobs_list->get_map();
+
+    if (this->params.size() > 1)
+    {
         smashError("fg: invalid arguments");
         return;
     }
 
     ///getting the jobId
-    if (this->params.empty()) {
-        if (map.size() == 0) {
+    if (this->params.empty())
+    {
+        if (map_of_smash_jobs.size() == 0)
+        {
             smashError("fg: jobs list is empty");
             return;
         }
         job_id = this->jobs_list->return_max_job_id_in_Map();
     }
-    else {
-        if (!checkIfInt(this->params[0])) {
+    else
+    {
+        if (!checkIfInt(this->params[0]))
+        {
             smashError("fg: invalid arguments");
             return;
         }
         job_id = stoi(this->params[0]);
-        if (map.find(job_id) == map.end()) {
+        if (map_of_smash_jobs.find(job_id) == map_of_smash_jobs.end())
+        {
             smashError("fg: job-id " + this->params[0] + " does not exist");
             return;
         }
     }
-    ///execute the command
 
+    ///execute the command
     this->jobs_list->removeFinishedJobs();
-    JobsList::JobEntry currentJob = map.find(job_id)->second;
+    JobsList::JobEntry currentJob = map_of_smash_jobs.find(job_id)->second;
     int pid = currentJob.getPid();
     cout << currentJob.toString() << endl;
     smash.bringJobToForeGround(currentJob);
@@ -566,7 +680,8 @@ void ForegroundCommand::execute() {
     waitpid(pid, nullptr, WUNTRACED);
 //
 //    todo: implement. do we need the if statement?
-    if (!map.find(job_id)->second.if_is_stopped()) {
+    if (!map_of_smash_jobs.find(job_id)->second.if_is_stopped())
+    {
         this->jobs_list->removeJobById(job_id);
     }
 //
@@ -580,55 +695,64 @@ void ForegroundCommand::execute() {
 /// \param cmd_line
 /// \param jobs
 BackgroundCommand::BackgroundCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
-void BackgroundCommand::execute() {
-    map<int, JobsList::JobEntry> map = this->jobs_list->get_map();
+//todo: https://piazza.com/class/kv2cqv5v30r229?cid=257
+void BackgroundCommand::execute()
+{
+    map<int, JobsList::JobEntry> map_of_smash_jobs = this->jobs_list->get_map();
     int job_id = 0;
 
-    if (this->params.size() > 1) {
+    if (this->params.size() > 1)
+    {
         smashError("bg: invalid arguments");
         return;
     }
 
     ///getting the jobId
-
-    if(this->params.size() == 0){
-        job_id = this->jobs_list->get_max_from_stopped_jobs_id();//todo get the jobId
-        if (job_id == 0) {
+    if(this->params.size() == 0)
+    {
+//        job_id = this->jobs_list->get_max_from_stopped_jobs_id();
+        job_id = this->jobs_list->return_max_stopped_jobs_id_in_map();//todo get the jobId
+        if (job_id == 0)
+        {
             smashError("bg: there is no stopped jobs to resume");
             return;
         }
     }
-    else {
-        if (!checkIfInt(this->params[0])) {
+    else
+    {
+        if (!checkIfInt(this->params[0]))
+        {
             smashError("bg: invalid arguments");
             return;
         }
         job_id = stoi(this->params[0]);
-        if (map.find(job_id) == map.end()) {
+        if (map_of_smash_jobs.find(job_id) == map_of_smash_jobs.end())
+        {
             smashError("bg: job-id " + this->params[0] + " does not exist");
             return;
         }
     }
 
     ///execute the command
-
-    JobsList::JobEntry jobEntry = map.find(job_id)->second;
-//    cout << "job data:" << endl;
-//    cout << "jobEntry.if_is_background: " << jobEntry.if_is_background() << endl;
-//    cout << "jobEntry.if_is_stopped: " << jobEntry.if_is_stopped() << endl;
-    if (jobEntry.if_is_background() && !jobEntry.if_is_stopped()) {
+    JobsList::JobEntry jobEntry = map_of_smash_jobs.find(job_id)->second;
+    if (jobEntry.if_is_background() && !jobEntry.if_is_stopped())
+    {
         smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
         return;
     }
     int pid_of_job = jobEntry.getPid();
     cout << jobEntry.toString() << endl;
-    if (jobEntry.if_is_background() && jobEntry.if_is_stopped()) {
-        if (killpg(pid_of_job, SIGCONT) == -1) { // syscall failed
+    if (jobEntry.if_is_background() && jobEntry.if_is_stopped())
+    {
+        if (killpg(pid_of_job, SIGCONT) == -1)
+        {
             smashError(" kill failed", true);
             return;
         }
         smash.sendJobToBackground(jobEntry);
-    } else{
+    }
+    else
+    {
         if (kill(pid_of_job, SIGCONT) == -1) {
             smashError(" kill failed", true);
             return;
@@ -642,18 +766,22 @@ void BackgroundCommand::execute() {
 /// \param cmd_line
 /// \param jobs
 QuitCommand::QuitCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(cmd_line),jobs_list(jobs) {}
-void QuitCommand::execute() {
-    this->jobs_list->removeFinishedJobs();
+
+void QuitCommand::execute()
+{
+    JobsList* jobs_list = this->jobs_list;
+    jobs_list->removeFinishedJobs();
     auto params = this->params;
+
     if (!params.empty() && params[0] == "kill") {
-        this->jobs_list->removeFinishedJobs();
-        map<int, JobsList::JobEntry> jobs = this->jobs_list->get_map();
-        cout << "smash: sending SIGKILL signal to " << jobs.size() << " jobs:" << endl;
-        for(auto job : jobs){
-            int pid = job.second.getPid();
+        jobs_list->removeFinishedJobs();
+        map<int, JobsList::JobEntry> map_of_smash_jobs = this->jobs_list->get_map();
+        cout << "smash: sending SIGKILL signal to " << map_of_smash_jobs.size() << " jobs:" << endl;
+        for(auto job : map_of_smash_jobs){
+            int job_id = job.second.getPid();
             string command = job.second.getCommand();
-            cout << pid << ": " << command << endl;
-            if (kill(pid, SIGKILL) == -1) {
+            cout << job_id << ": " << command << endl;
+            if (kill(job_id, SIGKILL) == -1) {
                 smashError("kill failed", true);
             }
         }
@@ -662,62 +790,75 @@ void QuitCommand::execute() {
 }
 
 
-
-
 ///
-/// #jobs section starts
+/// #JobsList
 ///
 
-///
-/// #jobs list start
-///
-
-void JobsList::printJobsList() {
-    for (auto &jobEntry : this->map_of_smash_jobs) {
-        time_t now = time(nullptr);
-        if (now == -1) {
+void JobsList::printJobsList()
+{
+    for (auto &job_entry : this->map_of_smash_jobs)
+    {
+        time_t time_now = time(nullptr);
+        if (time_now == -1)
+        {
             smashError("time failed", true);
             return;
         }
-        auto job = jobEntry.second;
-        cout << "[" << job.getJobId() << "] " << job.getCommand() << " : "
-             << job.getPid() << " "
-             << difftime(now, job.get_time_of_command()) << " secs";
-        if (job.if_is_stopped()) {
+        auto job = job_entry.second;
+        int job_id = job.getJobId();
+        string job_command = job.getCommand();
+        int job_pid = job.getPid();
+        double diff_time = difftime(time_now, job.get_time_of_command());
+
+        cout
+        << "[" << job_id << "] "
+        << job_command << " : "
+        << job_pid << " "
+        << diff_time
+        << " secs";
+
+        int if_is_stopped = job.if_is_stopped();
+        if (if_is_stopped)
+        {
             cout << " (stopped)";
         }
         cout << endl;
     }
 }
 
-void JobsList::removeFinishedJobs() {
+void JobsList::removeFinishedJobs()
+{
     int status;
-    int childPid = waitpid(-1, &status, WNOHANG);
-    while (childPid > 0) {
-        int jobId = get_job_id_by_pid(childPid);
-        if (jobId != 0) {
-            removeJobById(jobId);
+    int child_pid_finished = waitpid(-1, &status, WNOHANG);
+    while (child_pid_finished > 0)
+    {
+        int job_id_child_finished = get_job_id_by_pid(child_pid_finished);
+        if (job_id_child_finished != 0)
+        {
+            removeJobById(job_id_child_finished);
         }
-        childPid = waitpid(-1, &status, WNOHANG);
+        child_pid_finished = waitpid(-1, &status, WNOHANG);
     }
 }
 
-void JobsList::removeJobById(int jobId) {
-    JobEntry job = this->map_of_smash_jobs.find(jobId)->second;
-    job.deleteCommand();
-
-    this->map_of_smash_jobs.erase(jobId);
+void JobsList::removeJobById(int job_id)
+{
+    JobEntry job_entry = this->map_of_smash_jobs.find(job_id)->second;
+    job_entry.deleteCommand();
+    this->map_of_smash_jobs.erase(job_id);
     int maxJob = return_max_job_id_in_Map();
-
     set_max_from_jobs_id(maxJob);
 }
 
-int JobsList::return_max_job_id_in_Map() {
-    if (this->map_of_smash_jobs.size() == 0) {
+int JobsList::return_max_job_id_in_Map()
+{
+    if (this->map_of_smash_jobs.size() == 0)
+    {
         return 0;
     }
     int max = 0;
-    for (const auto &job : this->map_of_smash_jobs) {
+    for (const auto &job : this->map_of_smash_jobs)
+    {
         if (job.first > max) {
             max = job.first;
         }
@@ -726,27 +867,53 @@ int JobsList::return_max_job_id_in_Map() {
     return max;
 }
 
-void JobsList::set_max_from_jobs_id(int max_job_id) {
+void JobsList::set_max_from_jobs_id(int max_job_id)
+{
     this->max_from_jobs_id = max_job_id;
 }
 
-int JobsList::get_max_from_stopped_jobs_id() const {
+int JobsList::get_max_from_stopped_jobs_id() const
+{
     return this->max_from_stopped_jobs_id;
 }
 
-int JobsList::get_job_id_by_pid(int pid) {
-    if (this->map_of_smash_jobs.size() == 0) {
+int JobsList::return_max_stopped_jobs_id_in_map()
+{
+    if (this->map_of_smash_jobs.size() == 0)
+    {
         return 0;
     }
-    for (const auto &job : this->map_of_smash_jobs) {
-        if (job.second.getPid() == pid) {
+    int max = 0;
+    for (const auto &job : this->map_of_smash_jobs)
+    {
+        if (job.second.if_is_stopped() && job.first > max)
+        {
+            max = job.first;
+        }
+    }
+
+    return max;
+}
+
+int JobsList::get_job_id_by_pid(int pid)
+{
+    map <int, JobsList::JobEntry> map_of_smash_jobs = this->map_of_smash_jobs;
+    if (map_of_smash_jobs.size() == 0)
+    {
+        return 0;
+    }
+    for (const auto &job : map_of_smash_jobs)
+    {
+        if (job.second.getPid() == pid)
+        {
             return job.first;
         }
     }
     return 0;
 }
 
-int JobsList::JobEntry::getJobId() const {
+int JobsList::JobEntry::getJobId() const
+{
     return this->jobID;
 }
 
@@ -754,7 +921,8 @@ const map<int, JobsList::JobEntry> &JobsList::get_map() const {
     return this->map_of_smash_jobs;
 }
 
-int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
+int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId)
+{
     this->removeFinishedJobs();//todo: check with asaf
     if (jobId == -1){
         jobId = return_max_job_id_in_Map();
@@ -767,95 +935,114 @@ int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId) {
     return jobId;
 }
 
-void JobsList::change_last_stopped_job_id() {
-    ///checkvalgrind
-    JobsList jl = smash.getJobsList();
-    map<int, JobsList::JobEntry> Map = jl.get_map();
-    if (Map.size() == 0) {
+void JobsList::change_last_stopped_job_id()
+{
+    JobsList* job_list = smash.get_ptr_to_jobslist();
+    map <int, JobsList::JobEntry> map_of_smash_jobs = job_list->get_map();
+    if (map_of_smash_jobs.size() == 0) {
         this->max_from_stopped_jobs_id = 0;
     }
-    int Max = 0;
-    for (auto job : Map ){
-        if (job.first > Max && job.second.if_is_stopped()) {
-            Max = job.first;
+    int max_job_id = 0;
+    for (auto job : map_of_smash_jobs )
+    {
+        if (job.first > max_job_id && job.second.if_is_stopped())
+        {
+            max_job_id = job.first;
         }
     }
-    this->max_from_stopped_jobs_id  = Max;
+    this->max_from_stopped_jobs_id  = max_job_id;
 }
 
-/// #job entry begin
 
-JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd) {
+///
+/// #JobEntry
+///
+
+JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd)
+{
     this->time_of_command = time(nullptr);
-    this->jobID=jobId;
-    this->pid=pid;
-    if (this->time_of_command == -1) {
-        perror("smash error: time failed");
+    this->jobID = jobId;
+    this->pid = pid;
+
+    if (this->time_of_command == -1)
+    {
+        smashError("time failed", 1);
+        return;
     }
 }
 
-pid_t JobsList::JobEntry::getPid() const {
+pid_t JobsList::JobEntry::getPid() const
+{
     return this->pid;
 }
 
-const char *JobsList::JobEntry::getCommand() const {
+const char *JobsList::JobEntry::getCommand() const
+{
     return this->command->getCommandLine();
 }
 
-void JobsList::JobEntry::deleteCommand() {
+void JobsList::JobEntry::deleteCommand()
+{
     delete this->command;
 }
 
-bool JobsList::JobEntry::if_is_background() const {
+bool JobsList::JobEntry::if_is_background() const
+{
     return this->command->if_is_background();
 }
 
-void JobsList::JobEntry::setBackground(bool mode) const {
+void JobsList::JobEntry::setBackground(bool mode) const
+{
     this->command->setBackground(mode);
 }
 
-void JobsList::JobEntry::setStopped(bool stopped) const {
+void JobsList::JobEntry::setStopped(bool stopped) const
+{
     this->command->setStopped(stopped);
 }
 
-bool JobsList::JobEntry::if_is_stopped()const {
+bool JobsList::JobEntry::if_is_stopped()const
+{
     return this->command->if_is_stopped();
 }
 
-time_t JobsList::JobEntry::get_time_of_command() const {
+time_t JobsList::JobEntry::get_time_of_command() const
+{
     return this->time_of_command;
 }
 
-void JobsList::JobEntry::set_time_of_command(time_t time)  {
+void JobsList::JobEntry::set_time_of_command(time_t time)
+{
     this->time_of_command=time;
 }
 
-string JobsList::JobEntry::toString() const {
+string JobsList::JobEntry::toString() const
+{
     int pid = this->getPid();
     string command = this->getCommand();
     return command + " : " + std::to_string(pid);
 }
-
-///
-/// #jobs section ends
-///
 
 
 ///
 /// #ExternalCommand
 /// \param cmd_line
 /// \param is_bg
-ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line) {
+ExternalCommand::ExternalCommand(const char *cmd_line, bool is_bg)  : Command(cmd_line)
+{
     this->external = true;
-    this->background=is_bg;
+    this->background = is_bg;
 }
-void ExternalCommand::execute() {
+
+void ExternalCommand::execute()
+{
     int pid = fork();
     if (pid == -1) {
         smashError("fork failed", true);
         return;
     }
-    if (pid == 0) {
+    if (pid == 0)
+    {
         setpgrp();
         char external_params[200] = {0};
 
@@ -863,12 +1050,13 @@ void ExternalCommand::execute() {
         _trim(external_params);//todo: make sure what this command do
         _removeBackgroundSign(external_params);
 
-        char* param0=(char *) "/bin/bash";
-        char*param1=(char *) "-c";
-        char *const params_for_exec[] = {param0, param1, external_params, nullptr};
-        int ans = execv("/bin/bash", params_for_exec);
+        char* first_param = (char*)"/bin/bash";
+        char* second_param = (char*)"-c";
+        char *const params_for_exec[] = {first_param, second_param, external_params, nullptr};
+        int execv_check = execv("/bin/bash", params_for_exec);
 
-        if (ans == -1) {
+        if (execv_check == -1)
+        {
             smashError("execv failed", true);
             return;
         }
@@ -893,13 +1081,12 @@ void ExternalCommand::execute() {
 }
 
 
+///
+/// #specialcommands
+///
 
 ///
-/// special commands start
-///
-
-///
-/// pipe command
+/// #PipeCommand
 ///
 PipeCommand::PipeCommand(const char *cmd_line, bool out1): Command(cmd_line), ifout(out1) {}
 void PipeCommand::execute() {
@@ -1011,7 +1198,7 @@ void PipeCommand::execute() {
 
 
 ///
-/// redirection command
+/// #RedirectionCommand
 ///
 
 RedirectionCommand::RedirectionCommand(const char *cmd_line, bool background_flag, bool override_flag):Command(cmd_line),
@@ -1099,32 +1286,6 @@ void RedirectionCommand::execute() {
 }
 
 
-
-
-///
-/// special commands end
-///
-
-
-///
-/// \param fd
-/// \param index
-/// \return -1 on error
-/// \return 0 on eof
-/// \return the index of the next line
-int readNextLine(int fd, string& str){
-    char buffer;
-    str = "";
-    do {
-        int readResult = read(fd, &buffer, 1);
-        if (readResult == -1 || readResult == 0){
-            return readResult;
-        }
-        str += buffer;
-    } while (buffer != '\n');
-    return 1;
-}
-
 ///
 /// #HeadCommand
 /// \param cmd_line
@@ -1181,16 +1342,8 @@ void HeadCommand::execute() {
 }
 
 
-
-
-
 ///
-/// timeout section start
-///
-
-
-///
-/// timeout command
+/// #TimeoutCommand
 ///
 
 TimeoutCommand::TimeoutCommand(const char *cmd_line, bool isBackground_flag) : Command(cmd_line) {
@@ -1429,12 +1582,6 @@ time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
 
 
 
-
-
-
-
-
-
 ///
 /// timeout section end
 ///
@@ -1453,7 +1600,8 @@ time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
 /// #smash
 ///
 
-SmallShell::SmallShell():jobs(JobsList()) {
+SmallShell::SmallShell():jobs(JobsList())
+{
     this->pid = getpid();
     this->fgprocess=0;
 }
