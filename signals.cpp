@@ -45,17 +45,17 @@ void ctrlZHandler(int sig_num) {
 void ctrlCHandler(int sig_num) {
     signal(SIGINT, &ctrlCHandler);
     std::cout << "smash: got ctrl-C" << std::endl;
-    int fgprocess = smash.get_fg_process();
-    if (fgprocess != 0) {
-        int ans = killpg(fgprocess, SIGKILL);
-        if (ans == -1) {
+    int fgProcessId = smash.get_fg_process();
+    if (fgProcessId != 0) {
+        if (killpg(fgProcessId, SIGKILL) == -1) {
 //            smashError("smash error: kill failed", true);
             perror("smash error: kill failed");
             return;
         }
-        std::cout << "smash: process " << fgprocess << " was killed" << std::endl;
+        std::cout << "smash: process " << fgProcessId << " was killed" << std::endl;
     }
 }
+
 void alarmHandler(int sig_num) {
     std::cout << "smash: got an alarm" << std::endl;
     time_t time_now = time(nullptr);
@@ -67,15 +67,16 @@ void alarmHandler(int sig_num) {
         JobsList* jobs_list = smash.get_ptr_to_jobslist();
         TimeList* time_list = smash.get_ptr_to_Timelist();
 
-        int pid = tl.getTimeMap().find(time_Id)->second.getPid();
-        int job_id = tl.getTimeMap().find(time_Id)->second.getJobId();
+        auto alarm = tl.getTimeMap().find(time_Id)->second;
+
+        int pid = alarm.getPid();
+        int job_id = alarm.getJobId();
         int status;
         int ans = waitpid(pid, &status, WNOHANG);
         if (ans != 0) {
             jobs_list->removeJobById(job_id);
             time_list->removeTimeById(time_Id);
             time_list->change_Max_TimeId();
-
         }
         else{
             TimeList tl = smash.getTimeList();
@@ -83,14 +84,16 @@ void alarmHandler(int sig_num) {
             JobsList* jobs_list = smash.get_ptr_to_jobslist();
             TimeList* time_list = smash.get_ptr_to_Timelist();
 
-            int ans_2 = killpg(pid, SIGINT);
-            if (ans_2 == -1) {
+            if (killpg(pid, SIGINT) == -1) {
 //                smashError("smash error: kill failed", true);
                 perror("smash error: kill failed");
                 return;
             }
-            std::cout << "smash: " << tl.getTimeMap().find(time_Id)->second.getCommand() << " timed out!" << std::endl;
-            if (jl.get_map().find(job_id)->second.if_is_background() || jl.get_map().find(job_id)->second.if_is_stopped()) {
+            auto alarm = tl.getTimeMap().find(time_Id)->second;
+            auto  job = jl.get_map().find(job_id)->second;
+
+            std::cout << "smash: " << alarm.getCommand() << " timed out!" << std::endl;
+            if (job.if_is_background() || job.if_is_stopped()) {
                 jobs_list->removeJobById(job_id);
             }
             time_list->removeTimeById(time_Id);
