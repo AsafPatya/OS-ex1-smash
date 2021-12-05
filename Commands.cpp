@@ -330,11 +330,17 @@ bool xxx(string s, string command){ //todo: change the name
     return true;
 }
 
-bool isStringCommand(string s, string command){
+bool isStringCommand(string s, string command, bool isBuiltInCommand = false){
+    string str = s;
+    if (isBuiltInCommand){
+        if (s.at(s.length() - 1) == '&')
+            str = s.substr(0,s.length() - 1);
+    }
+    return (str.compare(command) == 0);
 //    cout << "looking for the command \"" << command << "\" in the string s:  " << s << endl;
-    bool b = xxx(s, command);
+//    bool b = xxx(s, command);
 //    cout << "the command has been" << (b ? "" : " not") << " founded" <<'\n' << endl;
-    return b;
+//    return b;
     //return command.find(s) == 0;// && s.at(command.length() + 1) == ' ';
 }
 
@@ -1633,42 +1639,45 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         }
         return new RedirectionCommand(cmd_line,background,override);
     }
-    else
-    if (isStringCommand(command_line, "chprompt")) {
+
+    string cmd_s = _trim(string(cmd_line));
+    string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));
+
+    if (isStringCommand(firstWord, "chprompt", true)) {
         return new ChpromptCommand(cmd_line);
     }
-    else if (isStringCommand(command_line, "showpid")) {
+    else if (isStringCommand(firstWord, "showpid", true)) {
         return new ShowPidCommand(cmd_line);
     }
-    else if (isStringCommand(command_line, "pwd")) {
+    else if (isStringCommand(firstWord, "pwd", true)) {
         return new GetCurrDirCommand(cmd_line);
     }
-    else if (isStringCommand(command_line, "cd")) {
+    else if (isStringCommand(firstWord, "cd", true)) {
         return new ChangeDirCommand(cmd_line);
     }
-    else if (isStringCommand(command_line, "kill")) {
+    else if (isStringCommand(firstWord, "kill", true)) {
         return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
     }
-    else if (isStringCommand(command_line, "jobs")) {
+    else if (isStringCommand(firstWord, "jobs", true)) {
         return new JobsCommand(cmd_line, smash.get_ptr_to_jobslist());
     }
-    else if (isStringCommand(command_line, "fg")) {
+    else if (isStringCommand(firstWord, "fg", true)) {
         return new ForegroundCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
-    else if (isStringCommand(command_line, "bg")) {
+    else if (isStringCommand(firstWord, "bg", true)) {
         return new BackgroundCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
-    else if (isStringCommand(command_line, "quit")) {
+    else if (isStringCommand(firstWord, "quit", true)) {
         return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
     }
-    else if (isStringCommand(command_line, "head")) {
+    else if (isStringCommand(firstWord, "head")) {
         return new HeadCommand(cmd_line);
     }
-    else if (isStringCommand(command_line, "timeout")) {
+    else if (isStringCommand(firstWord, "timeout")) {
         return new TimeoutCommand(cmd_line,background);
     }
     else {
-        if (command_line.empty()) {
+        if (firstWord.empty()) {
             return nullptr;
         }
         return new ExternalCommand(cmd_line, background);
