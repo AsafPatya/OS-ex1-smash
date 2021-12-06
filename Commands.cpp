@@ -1095,34 +1095,41 @@ void ExternalCommand::execute()
 /// #PipeCommand
 ///
 PipeCommand::PipeCommand(const char *cmd_line, bool out1): Command(cmd_line), ifout(out1) {}
-void PipeCommand::execute() {
+void PipeCommand::execute()
+{
     vector<string> params_of_pipe;
-    if (ifout) {
+    if (ifout)
+    {
         params_of_pipe = get_param_of_pipe(this->commandLine);
     }
-    else {
+    else
+    {
         params_of_pipe = get_param_of_pipe_with_arr(this->commandLine);
     }
 
-    if (params_of_pipe.size() != 2) {
+    if (params_of_pipe.size() != 2)
+    {
         smashError("invalid arguments");
         return;
     }
 
-    if (params_of_pipe[0].empty() || params_of_pipe[1].empty()) {
+    if (params_of_pipe[0].empty() || params_of_pipe[1].empty())
+    {
         smashError("invalid arguments");
         return;
     }
 
     int mypipe[2];
 
-    if (pipe(mypipe) == -1) {
+    if (pipe(mypipe) == -1)
+    {
         smashError("pipe failed", true);
         return;
     }
 
     int channel;
-    if (ifout == 1) {
+    if (ifout == 1)
+    {
         channel = 1;
     }
     else{
@@ -1137,44 +1144,55 @@ void PipeCommand::execute() {
 
     int pid1 = fork();
     int pid2;
-    if (pid1 == -1) {
+    if (pid1 == -1)
+    {
         smashError("fork failed", true);
         return;
     }
-    if (pid1 == 0) {
+    if (pid1 == 0)
+    {
         setpgrp();
-        if (dup2(mypipe[1], channel) == -1) {
+        if (dup2(mypipe[1], channel) == -1)
+        {
             smashError("dup2 failed", true);
             return;
         }
-        if (close(mypipe[0]) == -1) {
+        if (close(mypipe[0]) == -1)
+        {
             smashError("close failed", true);
             return;
         }
-        if (close(mypipe[1]) == -1) {
+        if (close(mypipe[1]) == -1)
+        {
             smashError("close failed", true);
             return;
         }
         smash.executeCommand(params_of_pipe[0].c_str());
         exit(0);
     }
-    else {
+    else
+    {
         pid2 = fork();
         //setrpgp
-        if (pid2 == -1) {
+        if (pid2 == -1)
+        {
             smashError("fork failed", true);
             return;
         }
-        if (pid2 == 0) {
-            if (dup2(mypipe[0], 0) == -1) {
+        if (pid2 == 0)
+        {
+            if (dup2(mypipe[0], 0) == -1)
+            {
                 smashError("dup2 failed", true);
                 return;
             }
-            if (close(mypipe[0]) == -1) {
+            if (close(mypipe[0]) == -1)
+            {
                 smashError("close failed", true);
                 return;
             }
-            if (close(mypipe[1]) == -1) {
+            if (close(mypipe[1]) == -1)
+            {
                 smashError("close failed", true);
                 return;
             }
@@ -1184,7 +1202,8 @@ void PipeCommand::execute() {
 
     }
 
-    if (close(mypipe[0]) == -1) {
+    if (close(mypipe[0]) == -1)
+    {
         smashError("close failed", true);
         return;
     }
@@ -1207,34 +1226,40 @@ void PipeCommand::execute() {
 /// #RedirectionCommand
 ///
 
-RedirectionCommand::RedirectionCommand(const char *cmd_line, bool background_flag, bool override_flag):Command(cmd_line),
-                                                                                             override(override_flag){
+RedirectionCommand::RedirectionCommand(const char *cmd_line, bool background_flag,bool override_flag)
+                                       :Command(cmd_line), override(override_flag){
     this->background=background_flag;
 }
 
-void RedirectionCommand::execute() {
+void RedirectionCommand::execute()
+{
     vector<string> params_to_rc;
-    if (this->override) {
+    if (this->override)
+    {
         params_to_rc = get_param_case_override(this->commandLine);
     }
-    else {
+    else
+    {
         params_to_rc = get_param_case_append(this->commandLine);
     }
-    if (params_to_rc.size() != 2) {
+    if (params_to_rc.size() != 2)
+    {
         smashError("invalid argument");
         return;
     }
-    if (params_to_rc[1].empty() || params_to_rc[0].empty()) {
+    if (params_to_rc[1].empty() || params_to_rc[0].empty())
+    {
         smashError("invalid argument");
         return;
     }
 
-    if (this->background) {
-
+    if (this->background)
+    {
         params_to_rc[0]+=" &";
         string rm_ampersand = "";
 
-        for (char c : params_to_rc[1]) {
+        for (char c : params_to_rc[1])
+        {
             if (c != '&') {
                 rm_ampersand.push_back(c);
             }
@@ -1259,14 +1284,17 @@ void RedirectionCommand::execute() {
     }
 
     int ans;
-    if (this->override) {
+    if (this->override)
+    {
         ans = open(file_name.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
 
     }
-    else {
+    else
+    {
         ans = open(file_name.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0666);
     }
-    if (ans == -1) {
+    if (ans == -1)
+    {
         smashError("open failed", true);
         dup2(ans_dup, 1);
         delete command;
@@ -1274,18 +1302,21 @@ void RedirectionCommand::execute() {
     }
 
     smash.executeCommand(command->getCommandLine());
-    if (close(1) == -1) {
+    if (close(1) == -1)
+    {
         smashError("close failed", true);
         dup2(ans_dup, 1);
         delete command;
         return;
     }
 
-    if (dup(ans_dup) == -1) {
+    if (dup(ans_dup) == -1)
+    {
         smashError("dup failed", true);
     }
 
-    if (close(ans_dup) == -1) {
+    if (close(ans_dup) == -1)
+    {
         smashError("close failed", true);
     }
     delete command;
@@ -1296,7 +1327,9 @@ void RedirectionCommand::execute() {
 /// #HeadCommand
 /// \param cmd_line
 HeadCommand::HeadCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
-void HeadCommand::execute() {
+
+void HeadCommand::execute()
+{
 
     ///setting the parameters
 
@@ -1305,14 +1338,17 @@ void HeadCommand::execute() {
         smashError("head: not enough arguments");
         return;
     }
-    if (paramsSize > 2){
+    if (paramsSize > 2)
+    {
         smashError("head: too many arguments"); // todo: ask about this message
         return;
     }
     int n = 10;
     string file = _trim(this->params[0]);
-    if (paramsSize == 2){
-        if(!checkIfInt(params[0])){
+    if (paramsSize == 2)
+    {
+        if(!checkIfInt(params[0]))
+        {
             smashError("head: invalid arguments");
             return;
         }
@@ -1323,7 +1359,8 @@ void HeadCommand::execute() {
     ///execute the command
 
     int fd = open(file.c_str(), O_RDONLY);
-    if (fd == -1) {
+    if (fd == -1)
+    {
         smashError("open failed", true);
         return;
     }
@@ -1331,7 +1368,8 @@ void HeadCommand::execute() {
     do {
         string str = "";
         int printingResult = readNextLine(fd, str);
-        if (printingResult < 0){
+        if (printingResult < 0)
+        {
             smashError("print failed", true);
             close(fd);
             return;
@@ -1352,51 +1390,57 @@ void HeadCommand::execute() {
 /// #TimeoutCommand
 ///
 
-TimeoutCommand::TimeoutCommand(const char *cmd_line, bool isBackground_flag) : Command(cmd_line) {
+TimeoutCommand::TimeoutCommand(const char *cmd_line, bool isBackground_flag) : Command(cmd_line)
+{
     this->background = isBackground_flag;
     this->external = true;
 }
 
-void TimeoutCommand::execute() {
-    vector<string> params_to_timeout_command = splitStringToWords(this->commandLine);
-//    this->params = params_to_timeout_command;
-    if (this->params.empty() || this->params.size() < 2) {
+void TimeoutCommand::execute()
+{
+//    vector<string> params_to_timeout_command = splitStringToWords(this->commandLine);
+    vector<string> params = this->params;
+    if (params.empty() || params.size() < 2)
+    {
         smashError("timeout: invalid arguments");
-//        cerr << "smash error: timeout: invalid arguments" << std::endl;
         return;
     }
     int duration = 0;
-    if (checkIfInt(this->params[0]) == 0) {
+    if (checkIfInt(params[0]) == 0)
+    {
         smashError("timeout: invalid arguments");
-//        cerr << "smash error: timeout: invalid arguments" << endl;
         return;
     }
-    else {
-        duration = std::atoi(this->params[0].c_str());
+    else
+    {
+        duration = std::atoi(params[0].c_str());
         if (duration < 0) {
             smashError("timeout: invalid arguments");
-//            cerr << "smash error: timeout: invalid arguments" << endl;
             return;
         }
     }
 
     string command_after_duration = "";
-    unsigned int length = this->params.size();
-    for (unsigned int i = 1; i < length; ++i) {
-        if (!command_after_duration.empty()) {
-            command_after_duration.append(" " + this->params[i]);
+    unsigned int length = params.size();
+    for (unsigned int i = 1; i < length; ++i)
+    {
+        if (!command_after_duration.empty())
+        {
+            command_after_duration.append(" " + params[i]);
         }
         else {
-            command_after_duration.append(this->params[i]);
+            command_after_duration.append(params[i]);
         }
     }
 
     int pid = fork();
-    if (pid == -1) {
+    if (pid == -1)
+    {
         smashError("fork failed", true);
         return;
     }
-    else if (pid == 0) {
+    else if (pid == 0)
+    {
         setpgrp();
         char params_to_time_cmd[200] = {0};
         strcpy(params_to_time_cmd, command_after_duration.c_str());
@@ -1413,7 +1457,8 @@ void TimeoutCommand::execute() {
             return;
         }
     }
-    else {
+    else
+    {
         JobsList* jobs_list = smash.get_ptr_to_jobslist();
         jobs_list->removeFinishedJobs();
         int new_job_id = jobs_list->addJob(pid, this, false);
@@ -1441,9 +1486,9 @@ void TimeoutCommand::execute() {
     }
 }
 
-
-/////timeList section
-
+///
+/// #TimeList
+///
 
 int TimeList::getMaxId() {
     return this->maxTimeId;
@@ -1455,27 +1500,29 @@ void TimeList::setMaxTimeId(int max_time_entry_id) {
 }
 
 
-int TimeList::addTime(int job_id, int pid, int timeOfDur, char *command) {
-    int new_time_id = getMaxId();
-    new_time_id += 1;
+int TimeList::addTime(int job_id, int pid, int timeOfDur, char *command)
+{
+    int max_time_id = getMaxId();
+    max_time_id += 1;
 
-    TimeEntry newTimeEntery(new_time_id, job_id, pid, timeOfDur, command);
-    this->timeMap.insert(std::pair<int, TimeEntry>(new_time_id, newTimeEntery));
-
-    setMaxTimeId(new_time_id);
-    return new_time_id;
-}
-
-
-void TimeList::removeTimeById(int time_entry_id) {
-    this->timeMap.erase(time_entry_id);
-
-    int max_time_id = getMaxKeyInMap();
+    TimeEntry new_time_entry_to_enter(max_time_id, job_id, pid, timeOfDur, command);
+    this->timeMap.insert(std::pair<int, TimeEntry>(max_time_id, new_time_entry_to_enter));
 
     setMaxTimeId(max_time_id);
+    return max_time_id;
 }
-int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now) {
 
+void TimeList::removeTimeById(int time_entry_id)
+{
+    this->timeMap.erase(time_entry_id);
+
+    int get_max_key_in_map = getMaxKeyInMap();
+
+    setMaxTimeId(get_max_key_in_map);
+}
+
+int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now)
+{
     for (auto &pair: this->timeMap) {
         int diff = pair.second.getTimeOfDur() - difftime(time_now, pair.second.getTimeOfCommandCame());
         if (diff <= 0) {
@@ -1485,63 +1532,56 @@ int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now) {
     return -1;
 }
 
-//int TimeList::get_JobId_Of_finished_timeout(time_t now) {
-//
-//    for (auto &pair: this->timeMap) {
-//        int until_finished = pair.second.getTimeOfDur() - difftime(now, pair.second.getTimeOfCommandCame());
-//        if (until_finished <= 0) {
-//            return pair.second.getJobId();
-//        }
-//    }
-//    return -1;
-//}
-//
 int TimeList::getMaxKeyInMap() {
-
-    if (this->timeMap.size() == 0) {
+    std::map<int, TimeEntry> timeMap = this->timeMap;
+    if (timeMap.size() == 0) {
         return 0;
     }
-    int max_Time_ID = 0;
+    int max_of_time_id = 0;
 
-    for (const auto &pair : this->timeMap) {
-        if (pair.first > max_Time_ID) {
-            max_Time_ID = pair.first;
+    for (const auto &pair : timeMap) {
+        if (pair.first > max_of_time_id) {
+            max_of_time_id = pair.first;
         }
     }
-    return max_Time_ID;
+    return max_of_time_id;
 }
 
 
-void TimeList::change_Max_TimeId() {
-    if (this->timeMap.size() == 0) {
+void TimeList::change_Max_TimeId()
+{
+    std::map<int, TimeEntry> timeMap = this->timeMap;
+    if (timeMap.size() == 0) {
         this->maxTimeId = 0;
     }
 
-    int max_time_id = 0;
+    int max_of_time_id = 0;
 
-    for (auto pair : this->timeMap) {
-        if (pair.first > max_time_id) {
-            max_time_id = pair.first;
+    for (auto pair : timeMap) {
+        if (pair.first > max_of_time_id) {
+            max_of_time_id = pair.first;
         }
     }
-    this->maxTimeId = max_time_id;
+    this->maxTimeId = max_of_time_id;
+    return;
 }
 
-
-void TimeList::What_is_the_Next_Timeout(time_t time_now) {
-
-    if (this->timeMap.empty()) {
+void TimeList::What_is_the_Next_Timeout(time_t time_now)
+{
+    std::map<int, TimeEntry> timeMap = this->timeMap;
+    if (timeMap.empty())
+    {
         return;
     }
-    int next_timeout_cmd = -1;
+    int next_command_timeout = -1;
 
-    for (auto &pair : this->timeMap) {
+    for (auto &pair : timeMap) {
         int diff = pair.second.getTimeOfDur() - difftime(time_now, pair.second.getTimeOfCommandCame());
-        if (diff < next_timeout_cmd || next_timeout_cmd == -1) {
-            next_timeout_cmd = diff;
+        if (diff < next_command_timeout || next_command_timeout == -1) {
+            next_command_timeout = diff;
         }
     }
-    alarm(next_timeout_cmd);
+    alarm(next_command_timeout);
 }
 
 const map<int, TimeList::TimeEntry> &TimeList::getTimeMap() const {
@@ -1549,8 +1589,10 @@ const map<int, TimeList::TimeEntry> &TimeList::getTimeMap() const {
 }
 
 
+///
+/// #TimeEntry
+///
 
-/////timeEntry section
 
 TimeList::TimeEntry::TimeEntry(int id, int job_id, int pid, int timeOfDur, char *command) : id(id), job_id(job_id),pid(pid),timeOfDur(timeOfDur),command(command) {
     this->timeOfCommandCame = time(nullptr);
@@ -1559,23 +1601,26 @@ TimeList::TimeEntry::TimeEntry(int id, int job_id, int pid, int timeOfDur, char 
     }
 }
 
-
-int TimeList::TimeEntry::getJobId() const {
+int TimeList::TimeEntry::getJobId() const
+{
     return this->job_id;
 }
 
 
-int TimeList::TimeEntry::getPid() const {
+int TimeList::TimeEntry::getPid() const
+{
     return this->pid;
 }
 
 
-int TimeList::TimeEntry::getTimeOfDur() const {
+int TimeList::TimeEntry::getTimeOfDur() const
+{
     return this->timeOfDur;
 }
 
 
-char *TimeList::TimeEntry::getCommand() const {
+char *TimeList::TimeEntry::getCommand() const
+{
     return this->command;
 }
 
@@ -1583,23 +1628,6 @@ char *TimeList::TimeEntry::getCommand() const {
 time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
     return this->timeOfCommandCame;
 }
-
-
-
-
-
-///
-/// timeout section end
-///
-
-
-
-
-
-
-///
-/// smash section
-///
 
 
 ///
@@ -1614,27 +1642,29 @@ SmallShell::SmallShell():jobs(JobsList())
 
 SmallShell::~SmallShell() {}
 
-Command * SmallShell::CreateCommand(const char* cmd_line) {
+Command * SmallShell::CreateCommand(const char* cmd_line)
+{
     string command_line = string(cmd_line);
 
     bool background = _isBackgroundComamnd(cmd_line);
 
-    bool ans_to_pipe1 = is_out(command_line);
-    bool ans_to_pipe_err1 = is_err(command_line);
+    bool is_out_flag = is_out(command_line);
+    bool is_err_flag = is_err(command_line);
 
-    bool ans_to_override1 = is_ovveride(command_line);
-    bool ans_to_append1 = is_append(command_line);
+    bool is_override_flag = is_ovveride(command_line);
+    bool is_append_flag = is_append(command_line);
 
-    if (ans_to_pipe1 || ans_to_pipe_err1) {
+    if (is_out_flag || is_err_flag)
+    {
         bool isout = true;
-        if(ans_to_pipe_err1){
+        if(is_err_flag){
             isout= false;
         }
         return new PipeCommand(cmd_line,isout);
     }
-    else if (ans_to_append1 || ans_to_override1) {
+    else if (is_append_flag || is_override_flag) {
         bool override = true;
-        if (ans_to_append1) {
+        if (is_append_flag) {
             override = false;
         }
         return new RedirectionCommand(cmd_line,background,override);
@@ -1687,13 +1717,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
 void SmallShell::executeCommand(const char *cmd_line) {
     this->jobs.removeFinishedJobs();//todo: check with asaf
-    Command *command = CreateCommand(cmd_line);
-    if (command) {
-        if (command->isExternal()) {
-            command->execute();
+    Command *new_command = CreateCommand(cmd_line);
+    if (new_command) {
+        if (new_command->isExternal()) {
+            new_command->execute();
         } else {
-            command->execute();
-            delete command;
+            new_command->execute();
+            delete new_command;
         }
     }
 }
