@@ -381,12 +381,12 @@ Command::~Command()
     delete this->commandLine;
 }
 
-bool Command::if_is_stopped() const
+bool Command::is_stopped() const
 {
     return this->stopped;
 }
 
-void Command::setStopped(bool stopped)
+void Command::set_stopped(bool stopped)
 {
     this->stopped = stopped;
 }
@@ -396,22 +396,22 @@ void Command::setStopped(bool stopped)
 //    return this->external;
 //}
 
-bool Command::if_is_background() const
+bool Command::is_background() const
 {
     return this->background;
 }
 
-void Command::setBackground(bool background)
+void Command::set_background(bool background)
 {
     this->background = background;
 }
 
-const char *Command::getCommandLine() const
+const char *Command::get_command_line() const
 {
     return this->commandLine;
 }
 
-bool Command::isExternal() const
+bool Command::is_external() const
 {
     return this->external;
 }
@@ -432,13 +432,13 @@ void ChpromptCommand::execute()
 {
     if (this->params.empty())
     {
-        smash.setPrompt("smash> ");
+        smash.set_prompt("smash> ");
     }
     else
     {
         string new_prompt = this->params.at(0);
         new_prompt.append("> ");
-        smash.setPrompt(new_prompt);
+        smash.set_prompt(new_prompt);
     }
 }
 
@@ -449,7 +449,7 @@ void ChpromptCommand::execute()
 ShowPidCommand::ShowPidCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
 
 void ShowPidCommand::execute() {
-    cout << "smash pid is " << smash.getPid() << endl;
+    cout << "smash pid is " << smash.get_pid() << endl;
 }
 
 ///
@@ -486,7 +486,7 @@ void GetCurrDirCommand::execute()
 ChangeDirCommand::ChangeDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line) {}
 void ChangeDirCommand::execute()
 {
-    string prev_directory = smash.getLastDir();
+    string prev_directory = smash.get_last_dirrectory();
     string curr_directory = "";
 
     if (this->params.size() > 1)
@@ -507,8 +507,8 @@ void ChangeDirCommand::execute()
             smashError("cd: OLDPWD not set");
             return;
         }
-        prev_directory = smash.getCurrDir();
-        curr_directory = smash.getLastDir();
+        prev_directory = smash.get_current_directory();
+        curr_directory = smash.get_last_dirrectory();
 
         int result = chdir(curr_directory.c_str());
         if (result == -1)
@@ -516,8 +516,8 @@ void ChangeDirCommand::execute()
             smashError("chdir failed", true);
             return;
         }
-        smash.setCurrDir(curr_directory);
-        smash.setLastDir(prev_directory);
+        smash.set_current_directory(curr_directory);
+        smash.set_last_dirrectory(prev_directory);
         return;
     }
 
@@ -542,8 +542,8 @@ void ChangeDirCommand::execute()
         }
 
         curr_directory = this->params[0];
-        smash.setCurrDir(curr_directory);
-        smash.setLastDir(prev_directory);
+        smash.set_current_directory(curr_directory);
+        smash.set_last_dirrectory(prev_directory);
         return;
     }
 }
@@ -558,7 +558,7 @@ JobsCommand::JobsCommand(const char *cmd_line, JobsList *jobs) : BuiltInCommand(
 
 void JobsCommand::execute()
 {
-    JobsList* jobs_list = smash.get_ptr_to_jobslist();
+    JobsList* jobs_list = smash.get_jobs_list_pointer();
     jobs_list->removeFinishedJobs();
     jobs_list->printJobsList();
 }
@@ -623,7 +623,7 @@ void KillCommand::execute()
     }
     else if(abs_signal_num == 19)
     {
-        smash.getJobsList().get_map().find(job_id)->second.setStopped(true);
+        smash.get_jobs().get_map().find(job_id)->second.set_stopped(true);
     }
     cout << "signal number " << abs_signal_num << " was sent to pid " << job_pid << endl;
 }
@@ -655,7 +655,7 @@ void ForegroundCommand::execute()
             smashError("fg: jobs list is empty");
             return;
         }
-        job_id = this->jobs_list->return_max_job_id_in_Map();
+        job_id = this->jobs_list->get_max_job_id_in_map();
     }
     else
     {
@@ -686,14 +686,14 @@ void ForegroundCommand::execute()
     waitpid(pid, nullptr, WUNTRACED);
 //
 //    todo: implement. do we need the if statement?
-    if (!map_of_smash_jobs.find(job_id)->second.if_is_stopped())
+    if (!map_of_smash_jobs.find(job_id)->second.is_stopped())
     {
         this->jobs_list->removeJobById(job_id);
     }
 //
     this->jobs_list->change_last_stopped_job_id();
 
-    smash.set_fg_process(0);
+    smash.set_foreground_proccess_id(0);
 }
 
 ///
@@ -717,7 +717,7 @@ void BackgroundCommand::execute()
     if(this->params.size() == 0)
     {
 //        job_id = this->jobs_list->get_max_from_stopped_jobs_id();
-        job_id = this->jobs_list->return_max_stopped_jobs_id_in_map();//todo get the jobId
+        job_id = this->jobs_list->get_max_stopped_jobs_id_in_map();//todo get the jobId
         if (job_id == 0)
         {
             smashError("bg: there is no stopped jobs to resume");
@@ -741,14 +741,14 @@ void BackgroundCommand::execute()
 
     ///execute the command
     JobsList::JobEntry jobEntry = map_of_smash_jobs.find(job_id)->second;
-    if (jobEntry.if_is_background() && !jobEntry.if_is_stopped())
+    if (jobEntry.is_background() && !jobEntry.is_stopped())
     {
         smashError(("bg: job-id " + std::to_string(job_id) + " is already running in the background"));
         return;
     }
     int pid_of_job = jobEntry.getPid();
     cout << jobEntry.toString() << endl;
-    if (jobEntry.if_is_background() && jobEntry.if_is_stopped())
+    if (jobEntry.is_background() && jobEntry.is_stopped())
     {
         if (killpg(pid_of_job, SIGCONT) == -1)
         {
@@ -785,7 +785,7 @@ void QuitCommand::execute()
         cout << "smash: sending SIGKILL signal to " << map_of_smash_jobs.size() << " jobs:" << endl;
         for(auto job : map_of_smash_jobs){
             int job_id = job.second.getPid();
-            string command = job.second.getCommand();
+            string command = job.second.get_command();
             cout << job_id << ": " << command << endl;
             if (kill(job_id, SIGKILL) == -1) {
                 smashError("kill failed", true);
@@ -812,9 +812,9 @@ void JobsList::printJobsList()
         }
         auto job = job_entry.second;
         int job_id = job.getJobId();
-        string job_command = job.getCommand();
+        string job_command = job.get_command();
         int job_pid = job.getPid();
-        double diff_time = difftime(time_now, job.get_time_of_command());
+        double diff_time = difftime(time_now, job.get_command_arrival_time());
 
         cout
         << "[" << job_id << "] "
@@ -823,7 +823,7 @@ void JobsList::printJobsList()
         << diff_time
         << " secs";
 
-        int if_is_stopped = job.if_is_stopped();
+        int if_is_stopped = job.is_stopped();
         if (if_is_stopped)
         {
             cout << " (stopped)";
@@ -850,13 +850,13 @@ void JobsList::removeFinishedJobs()
 void JobsList::removeJobById(int job_id)
 {
     JobEntry job_entry = this->map_of_smash_jobs.find(job_id)->second;
-    job_entry.deleteCommand();
+    job_entry.delete_command();
     this->map_of_smash_jobs.erase(job_id);
-    int maxJob = return_max_job_id_in_Map();
+    int maxJob = get_max_job_id_in_map();
     set_max_from_jobs_id(maxJob);
 }
 
-int JobsList::return_max_job_id_in_Map()
+int JobsList::get_max_job_id_in_map()
 {
     if (this->map_of_smash_jobs.size() == 0)
     {
@@ -883,7 +883,7 @@ int JobsList::get_max_from_stopped_jobs_id() const
     return this->max_from_stopped_jobs_id;
 }
 
-int JobsList::return_max_stopped_jobs_id_in_map()
+int JobsList::get_max_stopped_jobs_id_in_map()
 {
     if (this->map_of_smash_jobs.size() == 0)
     {
@@ -892,7 +892,7 @@ int JobsList::return_max_stopped_jobs_id_in_map()
     int max = 0;
     for (const auto &job : this->map_of_smash_jobs)
     {
-        if (job.second.if_is_stopped() && job.first > max)
+        if (job.second.is_stopped() && job.first > max)
         {
             max = job.first;
         }
@@ -920,7 +920,7 @@ int JobsList::get_job_id_by_pid(int pid)
 
 int JobsList::JobEntry::getJobId() const
 {
-    return this->jobID;
+    return this->jobId;
 }
 
 const map<int, JobsList::JobEntry> &JobsList::get_map() const {
@@ -931,19 +931,19 @@ int JobsList::addJob(int pid, Command *cmd, bool isStopped, int jobId)
 {
     this->removeFinishedJobs();//todo: check with asaf
     if (jobId == -1){
-        jobId = return_max_job_id_in_Map();
+        jobId = get_max_job_id_in_map();
     }
     jobId++;
     JobEntry new_job(jobId, pid, cmd);
     this->map_of_smash_jobs.insert(std::pair<int, JobEntry>(jobId, new_job));
-    if (jobId > return_max_job_id_in_Map())
+    if (jobId > get_max_job_id_in_map())
         set_max_from_jobs_id(jobId);
     return jobId;
 }
 
 void JobsList::change_last_stopped_job_id()
 {
-    JobsList* job_list = smash.get_ptr_to_jobslist();
+    JobsList* job_list = smash.get_jobs_list_pointer();
     map <int, JobsList::JobEntry> map_of_smash_jobs = job_list->get_map();
     if (map_of_smash_jobs.size() == 0) {
         this->max_from_stopped_jobs_id = 0;
@@ -951,7 +951,7 @@ void JobsList::change_last_stopped_job_id()
     int max_job_id = 0;
     for (auto job : map_of_smash_jobs )
     {
-        if (job.first > max_job_id && job.second.if_is_stopped())
+        if (job.first > max_job_id && job.second.is_stopped())
         {
             max_job_id = job.first;
         }
@@ -966,11 +966,11 @@ void JobsList::change_last_stopped_job_id()
 
 JobsList::JobEntry::JobEntry(int jobId, int pid, Command *cmd) : command(cmd)
 {
-    this->time_of_command = time(nullptr);
-    this->jobID = jobId;
+    this->command_arrival_time = time(nullptr);
+    this->jobId = jobId;
     this->pid = pid;
 
-    if (this->time_of_command == -1)
+    if (this->command_arrival_time == -1)
     {
         smashError("time failed", 1);
         return;
@@ -982,50 +982,50 @@ pid_t JobsList::JobEntry::getPid() const
     return this->pid;
 }
 
-const char *JobsList::JobEntry::getCommand() const
+const char *JobsList::JobEntry::get_command() const
 {
-    return this->command->getCommandLine();
+    return this->command->get_command_line();
 }
 
-void JobsList::JobEntry::deleteCommand()
+void JobsList::JobEntry::delete_command()
 {
     delete this->command;
 }
 
-bool JobsList::JobEntry::if_is_background() const
+bool JobsList::JobEntry::is_background() const
 {
-    return this->command->if_is_background();
+    return this->command->is_background();
 }
 
-void JobsList::JobEntry::setBackground(bool mode) const
+void JobsList::JobEntry::set_background(bool mode) const
 {
-    this->command->setBackground(mode);
+    this->command->set_background(mode);
 }
 
-void JobsList::JobEntry::setStopped(bool stopped) const
+void JobsList::JobEntry::set_stopped(bool stopped) const
 {
-    this->command->setStopped(stopped);
+    this->command->set_stopped(stopped);
 }
 
-bool JobsList::JobEntry::if_is_stopped()const
+bool JobsList::JobEntry::is_stopped()const
 {
-    return this->command->if_is_stopped();
+    return this->command->is_stopped();
 }
 
-time_t JobsList::JobEntry::get_time_of_command() const
+time_t JobsList::JobEntry::get_command_arrival_time() const
 {
-    return this->time_of_command;
+    return this->command_arrival_time;
 }
 
-void JobsList::JobEntry::set_time_of_command(time_t time)
+void JobsList::JobEntry::set_time_of_command_arrival_time(time_t time)
 {
-    this->time_of_command=time;
+    this->command_arrival_time=time;
 }
 
 string JobsList::JobEntry::toString() const
 {
     int pid = this->getPid();
-    string command = this->getCommand();
+    string command = this->get_command();
     return command + " : " + std::to_string(pid);
 }
 
@@ -1068,20 +1068,20 @@ void ExternalCommand::execute()
         }
     }
     else {
-        auto jobs = smash.get_ptr_to_jobslist();
+        auto jobs = smash.get_jobs_list_pointer();
         jobs->removeFinishedJobs();
         int new_job_id = jobs->addJob(pid, this, false);
 
-        if (!(this->if_is_background())) {
-            smash.set_fg_process(pid);
+        if (!(this->is_background())) {
+            smash.set_foreground_proccess_id(pid);
             waitpid(pid, nullptr, WUNTRACED);
-            if (!jobs->get_map().find(new_job_id)->second.if_is_stopped()) {
+            if (!jobs->get_map().find(new_job_id)->second.is_stopped()) {
                 // The process was not stopped while it was running, so it is safe to remove it from the jobs list
                 jobs->removeJobById(new_job_id);
             }
 
             jobs->change_last_stopped_job_id();
-            smash.set_fg_process(0);
+            smash.set_foreground_proccess_id(0);
         }
     }
 }
@@ -1094,11 +1094,11 @@ void ExternalCommand::execute()
 ///
 /// #PipeCommand
 ///
-PipeCommand::PipeCommand(const char *cmd_line, bool out1): Command(cmd_line), ifout(out1) {}
+PipeCommand::PipeCommand(const char *cmd_line, bool out1): Command(cmd_line), out(out1) {}
 void PipeCommand::execute()
 {
     vector<string> params_of_pipe;
-    if (ifout)
+    if (out)
     {
         params_of_pipe = get_param_of_pipe(this->commandLine);
     }
@@ -1128,7 +1128,7 @@ void PipeCommand::execute()
     }
 
     int channel;
-    if (ifout == 1)
+    if (out == 1)
     {
         channel = 1;
     }
@@ -1301,7 +1301,7 @@ void RedirectionCommand::execute()
         return;
     }
 
-    smash.executeCommand(command->getCommandLine());
+    smash.executeCommand(command->get_command_line());
     if (close(1) == -1)
     {
         smashError("close failed", true);
@@ -1459,7 +1459,7 @@ void TimeoutCommand::execute()
     }
     else
     {
-        JobsList* jobs_list = smash.get_ptr_to_jobslist();
+        JobsList* jobs_list = smash.get_jobs_list_pointer();
         jobs_list->removeFinishedJobs();
         int new_job_id = jobs_list->addJob(pid, this, false);
         int command_length = strlen(this->commandLine) + 1;
@@ -1467,21 +1467,21 @@ void TimeoutCommand::execute()
 
 
         strcpy(command_line, this->commandLine);
-        TimeList* time_list = smash.get_ptr_to_Timelist();
-        int new_time_id = time_list->addTime(new_job_id, pid, duration, command_line);
+        TimeList* time_list = smash.get_time_list_pointer();
+        int new_time_id = time_list->add_time(new_job_id, pid, duration, command_line);
         time_t time_now = time(nullptr);
-        time_list->What_is_the_Next_Timeout(time_now);
+        time_list->get_next_time_out(time_now);
 
-        if (!(this->if_is_background())) {
-            smash.set_fg_process(pid);
+        if (!(this->is_background())) {
+            smash.set_foreground_proccess_id(pid);
             waitpid(pid, nullptr, WUNTRACED);
-            JobsList jl = smash.getJobsList();
-            if (!jl.get_map().find(new_job_id)->second.if_is_stopped()) {
+            JobsList jl = smash.get_jobs();
+            if (!jl.get_map().find(new_job_id)->second.is_stopped()) {
                 jobs_list->removeJobById(new_job_id);
-                time_list->removeTimeById(new_time_id);
+                time_list->remove_by_id(new_time_id);
             }
             jobs_list->change_last_stopped_job_id();
-            smash.set_fg_process(0);
+            smash.set_foreground_proccess_id(0);
         }
     }
 }
@@ -1490,41 +1490,41 @@ void TimeoutCommand::execute()
 /// #TimeList
 ///
 
-int TimeList::getMaxId() {
-    return this->maxTimeId;
+int TimeList::get_max_id() {
+    return this->max_arrival_time_id;
 }
 
 
-void TimeList::setMaxTimeId(int max_time_entry_id) {
-    this->maxTimeId = max_time_entry_id;
+void TimeList::set_max_time_id(int max_time_entry_id) {
+    this->max_arrival_time_id = max_time_entry_id;
 }
 
 
-int TimeList::addTime(int job_id, int pid, int timeOfDur, char *command)
+int TimeList::add_time(int job_id, int pid, int timeOfDur, char *command)
 {
-    int max_time_id = getMaxId();
+    int max_time_id = get_max_id();
     max_time_id += 1;
 
     TimeEntry new_time_entry_to_enter(max_time_id, job_id, pid, timeOfDur, command);
     this->timeMap.insert(std::pair<int, TimeEntry>(max_time_id, new_time_entry_to_enter));
 
-    setMaxTimeId(max_time_id);
+    set_max_time_id(max_time_id);
     return max_time_id;
 }
 
-void TimeList::removeTimeById(int time_entry_id)
+void TimeList::remove_by_id(int time_entry_id)
 {
     this->timeMap.erase(time_entry_id);
 
-    int get_max_key_in_map = getMaxKeyInMap();
+    int get_max_key_in_map = get_max_key();
 
-    setMaxTimeId(get_max_key_in_map);
+    set_max_time_id(get_max_key_in_map);
 }
 
-int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now)
+int TimeList::get_ids_of_finished_timeouts(time_t time_now)
 {
     for (auto &pair: this->timeMap) {
-        int diff = pair.second.getTimeOfDur() - difftime(time_now, pair.second.getTimeOfCommandCame());
+        int diff = pair.second.get_duration() - difftime(time_now, pair.second.get_command_arrival_time());
         if (diff <= 0) {
             return pair.first;
         }
@@ -1532,7 +1532,7 @@ int TimeList::get_TimeId_Of_finished_Timeout(time_t time_now)
     return -1;
 }
 
-int TimeList::getMaxKeyInMap() {
+int TimeList::get_max_key() {
     std::map<int, TimeEntry> timeMap = this->timeMap;
     if (timeMap.size() == 0) {
         return 0;
@@ -1548,11 +1548,11 @@ int TimeList::getMaxKeyInMap() {
 }
 
 
-void TimeList::change_Max_TimeId()
+void TimeList::refresh_time_list()
 {
     std::map<int, TimeEntry> timeMap = this->timeMap;
     if (timeMap.size() == 0) {
-        this->maxTimeId = 0;
+        this->max_arrival_time_id = 0;
     }
 
     int max_of_time_id = 0;
@@ -1562,11 +1562,11 @@ void TimeList::change_Max_TimeId()
             max_of_time_id = pair.first;
         }
     }
-    this->maxTimeId = max_of_time_id;
+    this->max_arrival_time_id = max_of_time_id;
     return;
 }
 
-void TimeList::What_is_the_Next_Timeout(time_t time_now)
+void TimeList::get_next_time_out(time_t time_now)
 {
     std::map<int, TimeEntry> timeMap = this->timeMap;
     if (timeMap.empty())
@@ -1576,7 +1576,7 @@ void TimeList::What_is_the_Next_Timeout(time_t time_now)
     int next_command_timeout = -1;
 
     for (auto &pair : timeMap) {
-        int diff = pair.second.getTimeOfDur() - difftime(time_now, pair.second.getTimeOfCommandCame());
+        int diff = pair.second.get_duration() - difftime(time_now, pair.second.get_command_arrival_time());
         if (diff < next_command_timeout || next_command_timeout == -1) {
             next_command_timeout = diff;
         }
@@ -1584,7 +1584,7 @@ void TimeList::What_is_the_Next_Timeout(time_t time_now)
     alarm(next_command_timeout);
 }
 
-const map<int, TimeList::TimeEntry> &TimeList::getTimeMap() const {
+const map<int, TimeList::TimeEntry> &TimeList::get_map() const {
     return this->timeMap;
 }
 
@@ -1601,31 +1601,31 @@ TimeList::TimeEntry::TimeEntry(int id, int job_id, int pid, int timeOfDur, char 
     }
 }
 
-int TimeList::TimeEntry::getJobId() const
+int TimeList::TimeEntry::get_job_id() const
 {
     return this->job_id;
 }
 
 
-int TimeList::TimeEntry::getPid() const
+int TimeList::TimeEntry::get_pid() const
 {
     return this->pid;
 }
 
 
-int TimeList::TimeEntry::getTimeOfDur() const
+int TimeList::TimeEntry::get_duration() const
 {
     return this->timeOfDur;
 }
 
 
-char *TimeList::TimeEntry::getCommand() const
+char *TimeList::TimeEntry::get_command() const
 {
     return this->command;
 }
 
 
-time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
+time_t TimeList::TimeEntry::get_command_arrival_time() const {
     return this->timeOfCommandCame;
 }
 
@@ -1637,7 +1637,7 @@ time_t TimeList::TimeEntry::getTimeOfCommandCame() const {
 SmallShell::SmallShell():jobs(JobsList())
 {
     this->pid = getpid();
-    this->fgprocess=0;
+    this->foreground_proccess_id=0;
 }
 
 SmallShell::~SmallShell() {}
@@ -1686,19 +1686,19 @@ Command * SmallShell::CreateCommand(const char* cmd_line)
         return new ChangeDirCommand(cmd_line);
     }
     else if (isStringCommand(firstWord, "kill", true)) {
-        return new KillCommand(cmd_line, smash.get_ptr_to_jobslist());
+        return new KillCommand(cmd_line, smash.get_jobs_list_pointer());
     }
     else if (isStringCommand(firstWord, "jobs", true)) {
-        return new JobsCommand(cmd_line, smash.get_ptr_to_jobslist());
+        return new JobsCommand(cmd_line, smash.get_jobs_list_pointer());
     }
     else if (isStringCommand(firstWord, "fg", true)) {
-        return new ForegroundCommand(cmd_line,smash.get_ptr_to_jobslist());
+        return new ForegroundCommand(cmd_line,smash.get_jobs_list_pointer());
     }
     else if (isStringCommand(firstWord, "bg", true)) {
-        return new BackgroundCommand(cmd_line,smash.get_ptr_to_jobslist());
+        return new BackgroundCommand(cmd_line,smash.get_jobs_list_pointer());
     }
     else if (isStringCommand(firstWord, "quit", true)) {
-        return new QuitCommand(cmd_line,smash.get_ptr_to_jobslist());
+        return new QuitCommand(cmd_line,smash.get_jobs_list_pointer());
     }
     else if (isStringCommand(firstWord, "head")) {
         return new HeadCommand(cmd_line);
@@ -1719,7 +1719,7 @@ void SmallShell::executeCommand(const char *cmd_line) {
     this->jobs.removeFinishedJobs();//todo: check with asaf
     Command *new_command = CreateCommand(cmd_line);
     if (new_command) {
-        if (new_command->isExternal()) {
+        if (new_command->is_external()) {
             new_command->execute();
         } else {
             new_command->execute();
@@ -1728,65 +1728,65 @@ void SmallShell::executeCommand(const char *cmd_line) {
     }
 }
 
-string SmallShell::getPrompt() {
+string SmallShell::get_prompt() {
     return this->prompt;
 }
 
-void SmallShell::setPrompt(string newPromptName) {
+void SmallShell::set_prompt(string newPromptName) {
     this->prompt = newPromptName;
 }
 
-int SmallShell::getPid() {
+int SmallShell::get_pid() {
     return this->pid;
 }
 
-const string &SmallShell::getCurrDir() const {
-    return this->curr_dir;
+const string &SmallShell::get_current_directory() const {
+    return this->current_directory;
 }
 
-void SmallShell::setCurrDir(string currDir) {
-    this->curr_dir = currDir;
+void SmallShell::set_current_directory(string currDir) {
+    this->current_directory = currDir;
 }
 
-const string &SmallShell::getLastDir() const {
-    return this->last_dir;
+const string &SmallShell::get_last_dirrectory() const {
+    return this->last_dirrectory;
 }
 
-void SmallShell::setLastDir(string lastDir) {
-    this->last_dir = lastDir;
+void SmallShell::set_last_dirrectory(string lastDir) {
+    this->last_dirrectory = lastDir;
 }
 
-const JobsList &SmallShell::getJobsList() const {
+const JobsList &SmallShell::get_jobs() const {
     return this->jobs;
 }
 
-JobsList *SmallShell::get_ptr_to_jobslist() {
+JobsList *SmallShell::get_jobs_list_pointer() {
     return &(this->jobs);
 }
 
-int SmallShell::get_fg_process() const {
-    return this->fgprocess;
+int SmallShell::get_foreground_proccess_id() const {
+    return this->foreground_proccess_id;
 }
 
-void SmallShell::set_fg_process(int process_of_fg)  {
-    this->fgprocess = process_of_fg;
+void SmallShell::set_foreground_proccess_id(int process_of_fg)  {
+    this->foreground_proccess_id = process_of_fg;
 }
 
 void SmallShell::bringJobToForeGround(JobsList::JobEntry& jobEntry){
-    this->fgprocess = jobEntry.getPid();
-    jobEntry.setBackground(false);
-    jobEntry.setStopped(false);
+    this->foreground_proccess_id = jobEntry.getPid();
+    jobEntry.set_background(false);
+    jobEntry.set_stopped(false);
 }
 
 void SmallShell::sendJobToBackground(JobsList::JobEntry& jobEntry) {
-    jobEntry.setStopped(false);
+    jobEntry.set_stopped(false);
     this->jobs.change_last_stopped_job_id();
 }
 
-TimeList *SmallShell::get_ptr_to_Timelist() {
+TimeList *SmallShell::get_time_list_pointer() {
     return &(this->times);
 }
 
-const TimeList &SmallShell::getTimeList() const {
+const TimeList &SmallShell::get_time_list() const {
     return this->times;
 }

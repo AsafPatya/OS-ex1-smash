@@ -26,10 +26,10 @@ int main(int argc, char* argv[]) {
     }
 
     while(!smash.isquit) {
-        std::cout << smash.getPrompt();
+        std::cout << smash.get_prompt();
         std::string cmd_line;
         std::getline(std::cin, cmd_line);
-        smash.get_ptr_to_jobslist()->removeFinishedJobs();
+        smash.get_jobs_list_pointer()->removeFinishedJobs();
         smash.executeCommand(cmd_line.c_str());
     }
     return 0;
